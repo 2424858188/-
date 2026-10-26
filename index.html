@@ -1,48 +1,2738 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cosmic Atlas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body, html, #root {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        background-color: #000005; /* Deep space black */
-        color: white;
-      }
-      /* Custom scrollbar for info panels */
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-      }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "three": "https://aistudiocdn.com/three@^0.181.2",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
-    "@react-three/fiber": "https://aistudiocdn.com/@react-three/fiber@^9.4.0",
-    "@react-three/drei": "https://aistudiocdn.com/@react-three/drei@^10.7.7",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0"
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="红包实验室 · 用蒙特卡洛模拟算清楚抢红包先抢还是后抢，并做成能亲手抢的仿群聊游戏。纯前端零依赖单文件。">
+<title>红包实验室 · Hongbao Lab</title>
+<style>
+:root{
+  --bg:#0b0d14;
+  --bg2:#11141f;
+  --panel:#151a28;
+  --panel2:#1b2135;
+  --line:rgba(255,255,255,.08);
+  --ink:#e9ecf5;
+  --mut:#8b93ab;
+  --dim:#5b6279;
+  --red:#ff4d4f;
+  --red2:#c93a3c;
+  --gold:#ffc53d;
+  --gold2:#ffe58a;
+  --green:#07c160;
+  --blue:#4d7cff;
+  --purple:#9a6bff;
+  --orange:#ff9f43;
+  --teal:#2dd4bf;
+  --pink:#ff7aa2;
+  --radius:18px;
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  --font:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --mono:"SF Mono",ui-monospace,Menlo,Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--font);overflow-x:hidden}
+body{min-height:100vh;background-image:radial-gradient(1200px 700px at 15% -10%,rgba(255,77,79,.16),transparent 60%),radial-gradient(900px 600px at 90% 0%,rgba(255,197,61,.12),transparent 55%),radial-gradient(800px 800px at 50% 120%,rgba(77,124,255,.12),transparent 60%)}
+a{color:inherit}
+button{font-family:inherit;color:inherit;border:0;background:none;cursor:pointer}
+input,select{font-family:inherit;color:inherit}
+::selection{background:rgba(255,197,61,.35)}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:6px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,197,61,.4)}
+
+#fx{position:fixed;inset:0;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:0 22px 90px}
+
+/* ---------- header ---------- */
+header.top{display:flex;align-items:center;gap:18px;padding:26px 0 18px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:13px;margin-right:auto}
+.logo .mark{width:46px;height:46px;border-radius:13px;background:linear-gradient(160deg,#ff5c5c,#c8202c 60%,#8f1420);display:grid;place-items:center;box-shadow:0 8px 22px rgba(200,32,44,.45),inset 0 1px 0 rgba(255,255,255,.25);position:relative;overflow:hidden}
+.logo .mark:after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.35),transparent 55%)}
+.logo .mark span{font-size:22px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.35))}
+.logo h1{font-size:21px;margin:0;letter-spacing:.5px;font-weight:800}
+.logo p{margin:2px 0 0;font-size:11.5px;color:var(--dim);letter-spacing:1.6px;text-transform:uppercase}
+.badge{font-size:11px;color:var(--gold2);border:1px solid rgba(255,197,61,.32);background:rgba(255,197,61,.08);padding:6px 11px;border-radius:999px;white-space:nowrap}
+
+/* ---------- nav ---------- */
+nav.tabs{position:sticky;top:0;z-index:30;display:flex;gap:8px;padding:12px 0;margin-bottom:8px;background:linear-gradient(180deg,rgba(11,13,20,.96),rgba(11,13,20,.72) 75%,transparent);backdrop-filter:blur(10px);overflow-x:auto;scrollbar-width:none}
+nav.tabs::-webkit-scrollbar{display:none}
+.tab{display:flex;align-items:center;gap:9px;padding:11px 17px;border-radius:13px;border:1px solid var(--line);background:rgba(255,255,255,.026);color:var(--mut);font-size:14px;white-space:nowrap;transition:.22s}
+.tab b{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:1px}
+.tab:hover{color:var(--ink);border-color:rgba(255,197,61,.3);transform:translateY(-1px)}
+.tab.on{color:#2a1a06;background:linear-gradient(160deg,var(--gold2),var(--gold));border-color:transparent;font-weight:700;box-shadow:0 8px 24px rgba(255,197,61,.28)}
+.tab.on b{color:#7a5a00}
+
+/* ---------- views ---------- */
+.view{display:none;animation:fadeUp .45s cubic-bezier(.2,.7,.3,1)}
+.view.on{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.vhead{margin:6px 0 20px}
+.vhead .num{font-family:var(--mono);font-size:12px;letter-spacing:3px;color:var(--gold)}
+.vhead h2{font-size:29px;margin:6px 0 8px;font-weight:800;letter-spacing:.5px}
+.vhead p{margin:0;color:var(--mut);font-size:14px;line-height:1.85;max-width:820px}
+
+/* ---------- cards / grid ---------- */
+.card{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,.015));border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.card h3{margin:0 0 4px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
+.card h3 .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold)}
+.card .hint{margin:0 0 14px;font-size:12px;color:var(--dim);line-height:1.7}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.span2{grid-column:span 2}
+@media(max-width:1000px){.g2,.g3{grid-template-columns:1fr}.span2{grid-column:auto}}
+
+/* ---------- controls ---------- */
+.ctrl{margin-bottom:15px}
+.ctrl:last-child{margin-bottom:0}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;color:var(--mut);margin-bottom:7px;letter-spacing:.4px}
+.ctrl label output{font-family:var(--mono);font-size:13.5px;color:var(--gold2);font-weight:700}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:9px;background:linear-gradient(90deg,var(--gold) var(--p,50%),rgba(255,255,255,.1) var(--p,50%));outline:none;margin:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;background:#fff;border:3px solid var(--gold);box-shadow:0 3px 10px rgba(0,0,0,.5);cursor:grab;transition:.15s}
+input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.18)}
+input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:#fff;border:3px solid var(--gold);cursor:grab}
+.txtin{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-family:var(--mono);font-size:13px;color:var(--gold2)}
+.txtin:focus{border-color:rgba(255,197,61,.45);outline:none}
+.seg{display:flex;flex-wrap:wrap;gap:7px}
+.chip{padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--mut);font-size:12.5px;transition:.2s;line-height:1.3;text-align:left}
+.chip small{display:block;font-size:10.5px;color:var(--dim);margin-top:2px}
+.chip:hover{border-color:rgba(255,197,61,.35);color:var(--ink)}
+.chip.on{background:rgba(255,197,61,.14);border-color:rgba(255,197,61,.55);color:var(--gold2);font-weight:700}
+.chip.on small{color:#b99a4a}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{padding:12px 22px;border-radius:12px;font-size:14px;font-weight:700;letter-spacing:.5px;transition:.2s;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink)}
+.btn:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.2)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:linear-gradient(160deg,#ff6b6b,var(--red2));border-color:transparent;color:#fff;box-shadow:0 10px 26px rgba(200,32,44,.4)}
+.btn.gold{background:linear-gradient(160deg,var(--gold2),#e8ac12);border-color:transparent;color:#3a2a00;box-shadow:0 10px 26px rgba(255,197,61,.3)}
+.btn.ghost{background:transparent}
+.btn.sm{padding:8px 14px;font-size:12.5px;border-radius:10px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none!important}
+
+/* ---------- stat tiles ---------- */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat{background:rgba(0,0,0,.26);border:1px solid var(--line);border-radius:14px;padding:13px 15px;position:relative;overflow:hidden}
+.stat:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sc,var(--gold))}
+.stat i{display:block;font-style:normal;font-size:11px;color:var(--dim);letter-spacing:.6px;margin-bottom:5px}
+.stat b{font-family:var(--mono);font-size:21px;color:var(--sc,var(--gold2));font-weight:700;letter-spacing:-.5px}
+.stat u{display:block;text-decoration:none;font-size:10.5px;color:var(--dim);margin-top:3px}
+
+/* ---------- canvas charts ---------- */
+.chartbox{position:relative;width:100%;border-radius:14px;background:radial-gradient(120% 100% at 50% 0%,rgba(255,255,255,.05),rgba(0,0,0,.28));border:1px solid var(--line);overflow:hidden}
+.chartbox canvas{display:block;width:100%;height:auto}
+.chartbox .cap{position:absolute;left:14px;top:12px;font-size:11px;letter-spacing:1.4px;color:var(--dim);text-transform:uppercase}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--mut);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+
+/* ---------- single experiment cards ---------- */
+.hbcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:12px;margin-top:4px}
+.hbcard{perspective:800px;height:150px}
+.hbcard .inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.2,.8,.2,1)}
+.hbcard.flip .inner{transform:rotateY(180deg)}
+.hbface{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;display:grid;place-items:center;overflow:hidden}
+.hbback{background:linear-gradient(165deg,#ff6a6a,#c8202c 55%,#8d1220);border:1px solid rgba(255,197,61,.35);box-shadow:0 10px 24px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.2)}
+.hbback .seal{width:52px;height:52px;border-radius:50%;background:linear-gradient(160deg,var(--gold2),#dfa30c);color:#5a3d00;display:grid;place-items:center;font-weight:800;font-size:19px;box-shadow:0 5px 14px rgba(0,0,0,.35)}
+.hbback .idx{position:absolute;left:10px;top:8px;font-family:var(--mono);font-size:10.5px;color:rgba(255,255,255,.6)}
+.hbback .who{position:absolute;bottom:10px;font-size:11px;color:rgba(255,255,255,.75)}
+.hbfront{transform:rotateY(180deg);background:linear-gradient(170deg,#1d2337,#121625);border:1px solid rgba(255,197,61,.28)}
+.hbfront .amt{font-family:var(--mono);font-size:23px;font-weight:800;color:var(--gold2);text-shadow:0 0 18px rgba(255,197,61,.45)}
+.hbfront .lab{font-size:10.5px;color:var(--dim);margin-top:5px;letter-spacing:1px}
+.hbfront .pos{position:absolute;top:9px;left:11px;font-family:var(--mono);font-size:10px;color:var(--dim)}
+.hbfront.king{border-color:var(--gold);box-shadow:0 0 0 2px rgba(255,197,61,.35),0 12px 30px rgba(255,197,61,.2)}
+.hbfront.king .crown{position:absolute;top:6px;right:8px;font-size:15px}
+.poolbar{height:9px;border-radius:9px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:12px}
+.poolbar i{display:block;height:100%;background:linear-gradient(90deg,var(--red),var(--gold));transition:width .5s cubic-bezier(.2,.8,.2,1);border-radius:9px}
+
+/* ---------- phone / game ---------- */
+.gamestage{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.phone{width:378px;height:788px;max-width:100%;border-radius:44px;background:#0d0f16;border:11px solid #1d2029;box-shadow:0 40px 80px rgba(0,0,0,.6),inset 0 0 0 2px rgba(255,255,255,.06);position:relative;overflow:hidden;display:flex;flex-direction:column;flex:0 0 auto}
+.phone:before{content:"";position:absolute;left:50%;top:9px;transform:translateX(-50%);width:104px;height:24px;border-radius:14px;background:#12141b;z-index:60}
+.pstatus{height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 20px 4px;font-size:12px;font-weight:700;color:#fff;flex:0 0 auto;z-index:50}
+.pstatus .sig{display:flex;gap:4px;align-items:center;font-family:var(--mono);font-size:11px}
+.pnav{height:52px;display:flex;align-items:center;gap:10px;padding:0 14px;background:#15161d;border-bottom:1px solid rgba(255,255,255,.06);flex:0 0 auto}
+.pnav .bk{font-size:20px;color:#f2f4fa;line-height:1;padding:4px 6px;border-radius:8px}
+.pnav .ttl{font-size:15.5px;font-weight:600;color:#f2f4fa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pnav .sub{font-size:10.5px;color:#8b93ab;font-weight:400;display:block;margin-top:1px}
+.pnav .rt{margin-left:auto;font-size:11px;color:#8b93ab;text-align:right;font-family:var(--mono)}
+.plist,.pchats{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.plist{background:#0f1016}
+.pchat{display:none;flex-direction:column;flex:1 1 auto;min-height:0;background:#ededf2}
+.pchat.on{display:flex}
+.plist.on{display:block}
+.pchatbar{flex:0 0 auto;padding:9px 12px 16px;background:#f7f7fa;border-top:1px solid rgba(0,0,0,.07);display:flex;gap:9px;align-items:center}
+.pchatbar .fakein{flex:1;height:36px;border-radius:8px;background:#fff;border:1px solid #e0e0e6;display:flex;align-items:center;padding:0 12px;color:#9a9aa5;font-size:13.5px}
+.pchatbar .plus{width:34px;height:34px;border-radius:50%;background:#fff;border:1px solid #e0e0e6;color:#7a7a86;display:grid;place-items:center;font-size:19px}
+.conv{display:flex;gap:11px;padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.045);cursor:pointer;transition:.18s;position:relative}
+.conv:hover{background:rgba(255,255,255,.045)}
+.conv.on{background:rgba(255,197,61,.07)}
+.cav{width:46px;height:46px;border-radius:9px;flex:0 0 auto;display:grid;place-items:center;font-size:22px;background:linear-gradient(160deg,#242b40,#171c2b);border:1px solid rgba(255,255,255,.07);position:relative}
+.cav .n{position:absolute;right:-5px;top:-5px;min-width:18px;height:18px;border-radius:9px;background:var(--red);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 5px;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.cmid{flex:1;min-width:0}
+.ctop{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+ cname,.ctop .cname{font-size:14.5px;color:#e9ecf5;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctop .ctime{font-size:11px;color:#5b6279;flex:0 0 auto;font-family:var(--mono)}
+.cmsg{font-size:12.5px;color:#8b93ab;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmsg.red{color:var(--red)}
+.chatbody{flex:1 1 auto;overflow-y:auto;padding:12px 12px 6px;background:#ededf2;-webkit-overflow-scrolling:touch}
+.msgrow{display:flex;gap:8px;margin-bottom:14px;align-items:flex-start;animation:pop .3s ease}
+@keyframes pop{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.mav{width:36px;height:36px;border-radius:6px;flex:0 0 auto;display:grid;place-items:center;font-size:18px;background:#dcdde3;border:1px solid #cfd0d8}
+.mmain{max-width:74%}
+.mname{font-size:11px;color:#8d8d98;margin:0 0 3px 2px}
+.bubble{background:#fff;border-radius:6px;padding:9px 11px;font-size:14.5px;color:#191919;line-height:1.45;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.06);position:relative}
+.msgrow.me{flex-direction:row-reverse}
+.msgrow.me .bubble{background:#95ec69;color:#12240f}
+.msgrow.me .mname{text-align:right;margin-right:2px}
+.sysmsg{text-align:center;margin:6px 0 14px;font-size:11.5px;color:#9a9aa5}
+.sysmsg span{background:rgba(0,0,0,.06);padding:3px 9px;border-radius:5px}
+.hbsheet{margin:2px 0 0;width:min(258px,100%);border-radius:10px;overflow:hidden;background:#f25c54;color:#fff;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.14);transition:.2s;border:0;text-align:left;display:block}
+.hbsheet:hover{filter:brightness(1.05);transform:translateY(-1px)}
+.hbsheet .hs1{display:flex;gap:10px;align-items:center;padding:12px 13px}
+.hbsheet .ic{width:38px;height:38px;border-radius:8px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:20px;flex:0 0 auto}
+.hbsheet .t1{font-size:14px;font-weight:600;line-height:1.35}
+.hbsheet .t2{font-size:11px;opacity:.82;margin-top:3px}
+.hbsheet .tag{font-size:10px;background:rgba(255,255,255,.22);padding:2px 7px;border-radius:20px;display:inline-block;margin-top:5px}
+.hbsheet .foot{background:#e04c46;font-size:10.5px;padding:5px 13px;display:flex;justify-content:space-between;align-items:center}
+.hbsheet.got{background:#f7f7fa;color:#8d8d94;cursor:default;box-shadow:none;border:1px solid #e6e6ea}
+.hbsheet.got .foot{background:#efeff3;color:#9a9aa2}
+.hbsheet.got:hover{transform:none;filter:none}
+.hbsheet.expired{background:#f2f2f5;color:#a5a5ad;cursor:default}
+.hbsheet.expired .foot{background:#ececef}
+
+/* red packet detail overlay */
+.pmask{position:absolute;inset:0;background:rgba(0,0,0,.62);backdrop-filter:blur(3px);z-index:70;display:none;align-items:center;justify-content:center;padding:20px;animation:fadeIn .25s}
+.pmask.on{display:flex}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.sheet{width:100%;max-width:320px;background:linear-gradient(180deg,#f25c54,#d63b36);border-radius:16px;overflow:hidden;color:#fff;box-shadow:0 30px 60px rgba(0,0,0,.5);animation:rise .4s cubic-bezier(.2,.9,.25,1)}
+@keyframes rise{from{opacity:0;transform:translateY(40px) scale(.95)}to{opacity:1;transform:none}}
+.sheet .sh{padding:20px 20px 14px;text-align:center}
+.sheet .sh .who{font-size:13px;opacity:.9}
+.sheet .sh .bless{font-size:16px;font-weight:700;margin-top:8px;line-height:1.5}
+.sheet .body{background:#fdf6ec;color:#3b3b3b;padding:0}
+.sheet .list{max-height:290px;overflow-y:auto;padding:6px 0}
+.lrow{display:flex;align-items:center;gap:10px;padding:9px 18px;font-size:13.5px;border-bottom:1px solid rgba(0,0,0,.045)}
+.lrow .lav{width:30px;height:30px;border-radius:50%;background:#e8e2d6;display:grid;place-items:center;font-size:15px;flex:0 0 auto}
+.lrow .lamt{margin-left:auto;font-family:var(--mono);font-weight:700;color:#3b3b3b}
+.lrow.best .lamt{color:#e0a100}
+.lrow.best .lb{font-size:9.5px;background:#ffd54a;color:#6b4c00;padding:1px 6px;border-radius:20px;font-weight:700;margin-left:6px}
+.lrow.empty{color:#a8a29a;justify-content:center;font-size:12.5px;padding:16px}
+.sheet .openbtn{display:block;width:calc(100% - 36px);margin:16px 18px;background:linear-gradient(180deg,#ffd66b,#f0a90d);color:#7a4c00;font-size:16px;font-weight:800;padding:13px;border-radius:24px;box-shadow:0 6px 16px rgba(240,169,13,.4);transition:.15s}
+.sheet .openbtn:active{transform:scale(.97)}
+.sheet .close{display:block;width:100%;padding:12px;background:#f3ece2;color:#8a857c;font-size:13px}
+.sheet .total{text-align:center;padding:16px 0 4px}
+.sheet .total b{font-size:30px;font-family:var(--mono);color:#3b3b3b;font-weight:800}
+.sheet .total i{display:block;font-style:normal;font-size:11.5px;color:#9a948a;margin-top:2px}
+.confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:80}
+.coinf{position:absolute;font-size:16px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(320px) rotate(540deg);opacity:0}}
+
+/* game hud */
+.hud{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.hudbox{background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:12px;color:var(--mut)}
+.hudbox b{font-family:var(--mono);font-size:16px;color:var(--gold2);display:block;margin-top:2px}
+.hudbox.danger b{color:#ff6b6b}
+.modebar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.mb{padding:9px 15px;border-radius:11px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--mut);font-size:13px}
+.mb.on{background:linear-gradient(160deg,rgba(255,77,79,.9),rgba(201,58,60,.9));color:#fff;border-color:transparent;font-weight:700;box-shadow:0 8px 20px rgba(200,32,44,.35)}
+.glog{max-height:210px;overflow-y:auto;font-size:12px;line-height:1.75;color:var(--mut);background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+.glog div{border-bottom:1px dashed rgba(255,255,255,.05);padding:3px 0}
+.glog b{color:var(--gold2);font-family:var(--mono)}
+.glog .warn{color:#ff8a8a}
+.glog .ok{color:#7ee2a8}
+.rank{display:flex;flex-direction:column;gap:7px}
+.rk{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12.5px}
+.rk .no{font-family:var(--mono);color:var(--dim);width:18px}
+.rk .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk .vv{font-family:var(--mono);color:var(--gold2)}
+.rk.me{background:rgba(255,197,61,.13);border:1px solid rgba(255,197,61,.35)}
+.rk.dead{opacity:.4;text-decoration:line-through}
+.timerbig{font-family:var(--mono);font-size:34px;font-weight:800;color:var(--gold2);letter-spacing:-1px}
+.timerbig.low{color:#ff6b6b;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.45}}
+.progress{height:6px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--teal));transition:width .3s}
+.tablewrap{overflow-x:auto}
+table.tb{width:100%;border-collapse:collapse;font-size:12.5px;min-width:560px}
+table.tb th{text-align:left;padding:10px 12px;color:var(--dim);font-weight:600;font-size:11px;letter-spacing:.8px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.tb td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.045);color:var(--mut)}
+table.tb tr:hover td{background:rgba(255,255,255,.03)}
+table.tb td.n{font-family:var(--mono);color:var(--ink)}
+table.tb td.win{color:var(--gold2);font-weight:700}
+.tagline{margin-top:14px;padding:14px 16px;border-radius:12px;background:linear-gradient(120deg,rgba(255,197,61,.1),rgba(255,77,79,.08));border:1px solid rgba(255,197,61,.24);font-size:13.5px;line-height:1.85;color:var(--gold2)}
+.algoCard{cursor:pointer;transition:.2s}
+.algoCard:hover{transform:translateY(-3px);border-color:rgba(255,197,61,.35)}
+.algoCard .formula{font-family:var(--mono);font-size:11.5px;color:var(--teal);background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);padding:8px 10px;border-radius:9px;margin-top:10px;line-height:1.6;word-break:break-all}
+.prose{font-size:13.5px;line-height:1.95;color:var(--mut)}
+.prose h4{color:var(--ink);font-size:14.5px;margin:22px 0 8px}
+.prose strong{color:var(--gold2)}
+.prose code{font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.07);padding:2px 6px;border-radius:5px;color:var(--teal)}
+.prose ul{padding-left:20px;margin:8px 0}
+.prose li{margin:6px 0}
+.conclusion{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.cc{background:rgba(0,0,0,.26);border:1px solid var(--line);border-left:3px solid var(--red);border-radius:12px;padding:14px 16px}
+.cc h5{margin:0 0 6px;font-size:13.5px;color:var(--ink)}
+.cc p{margin:0;font-size:12.5px;color:var(--mut);line-height:1.75}
+.runbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.runbar .track{flex:1;min-width:180px;height:8px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden}
+.runbar .track i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--gold));transition:width .12s linear}
+.spinner{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:var(--gold);animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+footer{margin-top:50px;padding-top:22px;border-top:1px solid var(--line);font-size:12px;color:var(--dim);display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;line-height:1.8}
+.mobileonly{display:none}
+@media(max-width:760px){
+  .vhead h2{font-size:23px}
+  .phone{width:100%;height:min(760px,88vh);border-radius:30px;border-width:8px}
+  .wrap{padding:0 14px 60px}
+  .logo h1{font-size:17px}
+  body.gamefull .wrap>*:not(#view-game),body.gamefull header.top,body.gamefull footer,body.gamefull nav.tabs{display:none!important}
+  body.gamefull .wrap{padding:0}
+  body.gamefull .phone{border:0;border-radius:0;height:100vh;box-shadow:none}
+  .mobileonly{display:block}
+}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);background:rgba(20,22,32,.96);border:1px solid rgba(255,197,61,.35);color:var(--gold2);padding:11px 20px;border-radius:12px;font-size:13px;z-index:200;opacity:0;transition:.3s;pointer-events:none;box-shadow:0 12px 30px rgba(0,0,0,.5)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.hidden{display:none!important}
+.kbd{font-family:var(--mono);font-size:11px;border:1px solid var(--line);background:rgba(255,255,255,.05);border-radius:5px;padding:2px 6px;color:var(--mut)}
+.num-in{display:flex;gap:8px;align-items:center}
+.num-in input{flex:1;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-family:var(--mono);font-size:13px;color:var(--gold2);width:100%}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.presets button{font-size:11px;padding:5px 10px;border-radius:8px;border:1px solid var(--line);color:var(--dim);background:rgba(255,255,255,.03)}
+.presets button:hover{color:var(--gold2);border-color:rgba(255,197,61,.4)}
+.swatch{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim)}
+.swatch i{width:12px;height:12px;border-radius:3px}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+<header class="top">
+  <div class="logo">
+    <div class="mark"><span>🧧</span></div>
+    <div>
+      <h1>红包实验室 <span style="color:var(--dim);font-weight:400;font-size:13px">Hongbao Lab</span></h1>
+      <p>Monte Carlo × Group Chat Simulator</p>
+    </div>
+  </div>
+  <span class="badge">1024 造物挑战 · 单文件零依赖</span>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab on" data-v="single"><b>01</b>单次实验</button>
+  <button class="tab" data-v="game"><b>02</b>抢红包</button>
+  <button class="tab" data-v="sim"><b>03</b>万次模拟</button>
+  <button class="tab" data-v="duel"><b>04</b>算法对撞</button>
+  <button class="tab" data-v="doc"><b>05</b>玩法说明</button>
+</nav>
+<!-- ============ 01 单次实验 ============ -->
+<section class="view on" id="view-single">
+  <div class="vhead">
+    <div class="num">VIEW 01 / SINGLE TRIAL</div>
+    <h2>单次实验 · 这一屏不给你答案</h2>
+    <p>调好金额、人数、算法和随机种子，点「发红包」。十张卡片依次翻转、金额滚动、剩余池递减、手气王加冕——但请记住：<strong style="color:var(--gold2)">这只是运气</strong>。一次抢到 50 块的人会到处说，抢到 2 块的人不说话，这就是幸存者偏差。</p>
+  </div>
+
+  <div class="grid g2" style="align-items:start">
+    <div class="card">
+      <h3><span class="dot"></span>实验参数</h3>
+      <p class="hint">所有参数会写进地址栏 hash，分享链接即可复现同一结果。</p>
+      <div class="ctrl">
+        <label>红包总额 <output id="o-total">¥88.00</output></label>
+        <input type="range" id="r-total" min="1" max="1000" step="1" value="88">
+      </div>
+      <div class="ctrl">
+        <label>抢包人数 <output id="o-count">10</output></label>
+        <input type="range" id="r-count" min="2" max="50" step="1" value="10">
+      </div>
+      <div class="ctrl">
+        <label>分配算法</label>
+        <div class="seg" id="seg-algo"></div>
+      </div>
+      <div class="ctrl">
+        <label>随机种子（留空 = 每次真随机）</label>
+        <input class="txtin" id="i-seed" placeholder="例如 20241024" autocomplete="off">
+      </div>
+      <div class="presets" id="presets">
+        <button data-t="88" data-c="10">¥88 / 10 人</button>
+        <button data-t="200" data-c="20">¥200 / 20 人</button>
+        <button data-t="520" data-c="5">¥520 / 5 人</button>
+        <button data-t="66.6" data-c="33">¥66.6 / 33 人</button>
+        <button data-t="10" data-c="50">¥10 / 50 人</button>
+      </div>
+      <div class="row" style="margin-top:18px">
+        <button class="btn primary" id="b-send">🧧 发红包</button>
+        <button class="btn ghost sm" id="b-reseed">换个种子</button>
+        <button class="btn sm" id="b-share">🔗 复制参数链接</button>
+        <button class="btn gold sm" id="b-card">🖼 生成分享卡</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3><span class="dot" style="background:var(--red);box-shadow:0 0 10px var(--red)"></span>本次结果</h3>
+      <p class="hint" id="s-caption">等待发放…</p>
+      <div class="stats" style="margin-bottom:14px">
+        <div class="stat" style="--sc:var(--gold)"><i>手气最佳</i><b id="s-king">—</b><u id="s-kingpos">第 ? 位抢到</u></div>
+        <div class="stat" style="--sc:var(--green)"><i>中位数</i><b id="s-median">—</b><u>比它高 = 赢过一半人</u></div>
+        <div class="stat" style="--sc:var(--blue)"><i>本次极差</i><b id="s-range">—</b><u>最大 − 最小</u></div>
+        <div class="stat" style="--sc:var(--purple)"><i>本次离散系数</i><b id="s-cv">—</b><u>σ / μ，越大越不均</u></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mut)">
+        <span>剩余资金池</span><span class="kbd" id="s-left">¥88.00 / 10 份</span>
+      </div>
+      <div class="poolbar"><i id="pool" style="width:100%"></i></div>
+      <div class="hbcards" id="cards"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3><span class="dot" style="background:var(--teal);box-shadow:0 0 10px var(--teal)"></span>把这一次丢进分布里看看</h3>
+    <p class="hint">竖线是你刚才那一次的<strong style="color:var(--gold2)">手气王金额</strong>。单次样本在分布里的位置毫无意义——这正是本实验要证明的事。</p>
+    <div class="chartbox"><canvas id="c-mini"></canvas></div>
+  </div>
+</section>
+
+<!-- ============ 02 抢红包游戏 ============ -->
+<section class="view" id="view-game">
+  <div class="vhead">
+    <div class="num">VIEW 02 / GROUP CHAT SIMULATOR</div>
+    <h2>抢红包 · 九个群同时在跑</h2>
+    <p>你不看的时候它们也在动：有人聊天、有人发红包、有人抢。限时模式要你盯着列表上亮起的「N 个红包」标记来回跳群；手气王接力里，抢得最多的人反而要掏钱发下一个——<strong style="color:var(--gold2)">赢，本身就是风险</strong>。</p>
+  </div>
+
+  <div class="modebar" id="modebar">
+    <button class="mb on" data-m="timed">⏱ 限时 60 秒</button>
+    <button class="mb" data-m="relay">👑 手气王接力</button>
+    <button class="mb" data-m="free">🚶 自由模式</button>
+    <button class="btn sm" id="g-start" style="margin-left:auto">▶ 开始</button>
+    <button class="btn sm ghost" id="g-reset">重置</button>
+  </div>
+
+  <div class="hud">
+    <div class="hudbox" id="hb-time">倒计时<b>60.0s</b></div>
+    <div class="hudbox" id="hb-balance">我的余额<b>¥0.00</b></div>
+    <div class="hudbox" id="hb-got">抢到份数<b>0</b></div>
+    <div class="hudbox" id="hb-rate">手气王次数<b>0</b></div>
+    <div class="hudbox" id="hb-round" style="flex:1;min-width:200px">当前状态<b id="hb-round-txt">未开始 · 选择模式后点「开始」</b></div>
+  </div>
+
+  <div class="gamestage">
+    <div class="phone" id="phone">
+      <div class="pstatus"><span id="clock">--:--</span><span class="sig">📶 &nbsp;🔋 87%</span></div>
+      <div class="pnav">
+        <button class="bk hidden" id="btn-back">‹</button>
+        <div class="ttl"><span id="nav-title">微信</span><span class="sub" id="nav-sub">9 个群 · 全部活跃</span></div>
+        <div class="rt" id="nav-rt"></div>
+      </div>
+      <div class="plist on" id="plist"></div>
+      <div class="pchats" id="pchats"></div>
+      <div class="pmask" id="pmask"></div>
+      <div class="confetti" id="confetti"></div>
+    </div>
+
+    <div style="flex:1;min-width:280px;max-width:520px;display:grid;gap:16px">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--red);box-shadow:0 0 10px var(--red)"></span>战况播报</h3>
+        <div class="glog" id="glog"></div>
+      </div>
+      <div class="card">
+        <h3><span class="dot"></span>余额排行</h3>
+        <p class="hint">手气王接力模式下，每轮手气最佳者必须按规矩发下一个红包；余额不足即出局。</p>
+        <div class="rank" id="grank"></div>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--green);box-shadow:0 0 10px var(--green)"></span>群设定</h3>
+        <div class="tablewrap"><table class="tb" id="gtbl"></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 03 万次模拟 ============ -->
+<section class="view" id="view-sim">
+  <div class="vhead">
+    <div class="num">VIEW 03 / MONTE CARLO</div>
+    <h2>万次模拟 · 把运气平均掉</h2>
+    <p>用左侧同一组参数跑 1 万到 50 万次。跑完之后，运气被平均掉了，规律浮出来。<strong style="color:var(--gold2)">先抢后抢的期望值几乎一样</strong>，但末位的方差最大——最后抢的人不是最惨，是最飘。</p>
+  </div>
+
+  <div class="grid g2" style="align-items:start;margin-bottom:18px">
+    <div class="card">
+      <h3><span class="dot"></span>模拟设置</h3>
+      <p class="hint">共用视图 01 的金额 / 人数 / 算法 / 种子，改这里也会同步回去。</p>
+      <div class="ctrl">
+        <label>模拟次数 <output id="o-times">100,000</output></label>
+        <input type="range" id="r-times" min="0" max="5" step="1" value="3">
+        <div class="presets">
+          <button data-n="10000">1 万</button><button data-n="50000">5 万</button><button data-n="100000">10 万</button>
+          <button data-n="200000">20 万</button><button data-n="500000">50 万</button>
+        </div>
+      </div>
+      <div class="runbar">
+        <button class="btn primary" id="b-run">▶ 开始模拟</button>
+        <button class="btn ghost sm" id="b-stop" disabled>■ 停止</button>
+        <div class="track"><i id="sim-prog"></i></div>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--mut)" id="sim-stat">待命</span>
+      </div>
+      <p class="hint" style="margin-top:12px" id="engine-note">计算引擎：Web Worker（后台线程，不阻塞界面）</p>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--green);box-shadow:0 0 10px var(--green)"></span>关键指标</h3>
+      <p class="hint" id="sim-note">跑完后这里会出现结论行。</p>
+      <div class="stats">
+        <div class="stat" style="--sc:var(--gold)"><i>总采样份数</i><b id="m-samples">—</b><u>次数 × 人数</u></div>
+        <div class="stat" style="--sc:var(--blue)"><i>耗时</i><b id="m-cost">—</b><u>Worker 实测</u></div>
+        <div class="stat" style="--sc:var(--teal)"><i>整体均值</i><b id="m-mean">—</b><u>恒等于 总额 ÷ 人数</u></div>
+        <div class="stat" style="--sc:var(--purple)"><i>整体标准差</i><b id="m-sd">—</b><u>绝对波动</u></div>
+        <div class="stat" style="--sc:var(--red)"><i>离散系数 CV</i><b id="m-cv">—</b><u>公平性的度量</u></div>
+        <div class="stat" style="--sc:var(--orange)"><i>首位 vs 末位 σ</i><b id="m-lastfirst">—</b><u>末位更“飘”的程度</u></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="gap:18px">
+    <div class="card">
+      <h3><span class="dot"></span>① 单个红包的金额分布</h3>
+      <p class="hint">横轴是金额（分桶步长取整数），纵轴是出现次数。二倍均值法呈右偏长尾：大多数人在小额区，极少数人拿走大包。</p>
+      <div class="chartbox"><canvas id="c-hist"></canvas><div class="cap">HISTOGRAM · 3D</div></div>
+      <div class="legend"><span><i style="background:var(--gold)"></i>频次</span><span><i style="background:#fff;opacity:.6"></i>竖线 = 理论均值</span></div>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--red);box-shadow:0 0 10px var(--red)"></span>② 第几位最容易当手气王</h3>
+        <p class="hint">每轮里金额最大的那个位置。理想公平下应完全平坦（虚线 = 1/N）。</p>
+        <div class="chartbox"><canvas id="c-king"></canvas><div class="cap">LUCKY KING BY POSITION</div></div>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--teal);box-shadow:0 0 10px var(--teal)"></span>③ 每个位置的期望金额</h3>
+        <p class="hint">柱高 = 该位置均值，须线 = ±1σ。柱子齐平说明顺序不值钱，须线变长说明风险变大。</p>
+        <div class="chartbox"><canvas id="c-pos"></canvas><div class="cap">MEAN ± SD BY POSITION</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 04 算法对撞 ============ -->
+<section class="view" id="view-duel">
+  <div class="vhead">
+    <div class="num">VIEW 04 / ALGORITHM DUEL</div>
+    <h2>算法对撞 · 「公平」是一组可测量的数字</h2>
+    <p>四种分配算法在同一组参数下各跑一遍，同屏对比均值、标准差、离散系数与手气王分布。只给你一种算法，你只能验证它；给你四种，你才能给「公平」下定义。</p>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="row" style="gap:16px;align-items:flex-end">
+      <div class="ctrl" style="margin:0;min-width:150px">
+        <label>对撞总额 <output id="o-dtotal">¥88.00</output></label>
+        <input type="range" id="r-dtotal" min="1" max="1000" value="88">
+      </div>
+      <div class="ctrl" style="margin:0;min-width:150px">
+        <label>对撞人数 <output id="o-dcount">10</output></label>
+        <input type="range" id="r-dcount" min="2" max="50" value="10">
+      </div>
+      <div class="ctrl" style="margin:0;min-width:170px">
+        <label>每种算法次数 <output id="o-dtimes">50,000</output></label>
+        <input type="range" id="r-dtimes" min="0" max="5" step="1" value="2">
+      </div>
+      <button class="btn primary" id="b-duel">⚔️ 开始对撞</button>
+      <button class="btn ghost sm" id="b-duelstop" disabled>■ 停止</button>
+      <div class="track" style="flex:1;min-width:150px;height:8px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden"><i id="duel-prog" style="display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--gold))"></i></div>
+      <span style="font-family:var(--mono);font-size:12px;color:var(--mut)" id="duel-stat">待命</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <h3><span class="dot"></span>指标横向对比</h3>
+    <p class="hint">绿色 = 该项最优。CV 越小越公平；首尾期望差越小越不看顺序；末位/首位标准差比越大说明末位越飘。</p>
+    <div class="tablewrap"><table class="tb" id="dueltbl"></table></div>
+    <div class="tagline" id="duel-verdict">点击「开始对撞」后，这里会给出结论。</div>
+  </div>
+
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card">
+      <h3><span class="dot" style="background:var(--purple);box-shadow:0 0 10px var(--purple)"></span>手气王位置分布（四条曲线）</h3>
+      <div class="chartbox"><canvas id="c-dking"></canvas><div class="cap">KING DISTRIBUTION OVERLAY</div></div>
+      <div class="legend" id="d-legend"></div>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--orange);box-shadow:0 0 10px var(--orange)"></span>各位置期望金额（分组柱）</h3>
+      <div class="chartbox"><canvas id="c-dmean"></canvas><div class="cap">POSITION MEANS GROUPED</div></div>
+    </div>
+  </div>
+
+  <div class="grid g2">
+    <div class="card">
+      <h3><span class="dot" style="background:var(--teal);box-shadow:0 0 10px var(--teal)"></span>金额分布叠加（箱线式密度带）</h3>
+      <div class="chartbox"><canvas id="c-dhist"></canvas><div class="cap">STACKED DISTRIBUTIONS</div></div>
+    </div>
+    <div class="card">
+      <h3><span class="dot"></span>怎么读这张表</h3>
+      <div class="prose">
+        <p><strong>离散系数 CV = σ / μ</strong> 是唯一能跨规模比较的均匀度指标。CV=16% 意味着几乎人人差不多；CV=199% 意味着少数人吃掉绝大部分。</p>
+        <h4>三个反直觉结论</h4>
+        <ul>
+          <li>二倍均值法下，先抢后抢的期望差<strong>不到 1%</strong>——决定你拿多少的从来不是顺序，是运气。</li>
+          <li>末位方差最大，标准差约为首位的 <strong>1.32 倍</strong>。最后抢的人不是最惨，是最飘。</li>
+          <li>纯随机是反面教材：第一个抢的人平均拿走<strong>一半</strong>，62.6% 的手气王集中在第 1 位。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 05 玩法说明 ============ -->
+<section class="view" id="view-doc">
+  <div class="vhead">
+    <div class="num">VIEW 05 / METHODOLOGY</div>
+    <h2>玩法说明 · 方法论与边界</h2>
+    <p>四种分法的定义、三个反直觉结论、推荐玩法，以及游戏部分的规则。全部内容本地计算，无任何网络请求。</p>
+  </div>
+
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card algoCard" data-algo="double">
+      <h3><span class="dot"></span>① 二倍均值法 <span style="font-size:11px;color:var(--dim);font-weight:400">默认 · 微信同类</span></h3>
+      <p class="hint">每次在「剩余金额 ÷ 剩余人数 × 2」以内随机取一份，并保证至少 1 分。因为上限随剩余人数动态收缩，任何位置的理论期望都等于人均。</p>
+      <div class="formula">amt_i = randint(1, floor( remain / left * 2 ))</div>
+    </div>
+    <div class="card algoCard" data-algo="pure">
+      <h3><span class="dot" style="background:var(--red);box-shadow:0 0 10px var(--red)"></span>② 纯随机</h3>
+      <p class="hint">在剩余金额里随便取，只保证后面每人至少留 1 分。极端不均，第一个抢的人几乎通吃——用来做对照，让你看清「先到先得」放大到极致是什么样。</p>
+      <div class="formula">amt_i = randint(1, remain - (left-1)*1)</div>
+    </div>
+    <div class="card algoCard" data-algo="jitter">
+      <h3><span class="dot" style="background:var(--green);box-shadow:0 0 10px var(--green)"></span>③ 均分微扰</h3>
+      <p class="hint">先算平均值，每份上下浮动 30%，再按比例归一，最后 Bresenham 式累积取整。位置完全无差别，最公平。</p>
+      <div class="formula">raw_i = mean * (1 + U(-0.3, 0.3)); scale → cumRound(Σ == total)</div>
+    </div>
+    <div class="card algoCard" data-algo="tail">
+      <h3><span class="dot" style="background:var(--purple);box-shadow:0 0 10px var(--purple)"></span>④ 后位加权</h3>
+      <p class="hint">越靠后越占优的地摊式分法，权重线性递增后归一。首尾期望差约 10 倍，作为「规则本身偏心」的反例。</p>
+      <div class="formula">w_i = i; amt_i = round(total * w_i / Σw) with cumRound</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <h3><span class="dot"></span>四个算法的公式速查</h3>
+    <div class="tablewrap"><table class="tb">
+      <thead><tr><th>算法</th><th>规则</th><th>特点</th><th>典型 CV</th></tr></thead>
+      <tbody>
+        <tr><td class="n">二倍均值法</td><td>每次在「剩余 ÷ 剩余人数 × 2」内随机取一份</td><td>微信红包用的就是这一类，也是默认算法</td><td class="n">≈65%</td></tr>
+        <tr><td class="n">纯随机</td><td>剩余金额里随便取，只保证后面每人至少 1 分</td><td>极端不均，首位几乎通吃</td><td class="n">≈199%</td></tr>
+        <tr><td class="n">均分微扰</td><td>均值 ±30% 后按比例归一再累积取整</td><td>最公平，位置完全无差别</td><td class="n">≈16%</td></tr>
+        <tr><td class="n">后位加权</td><td>权重随位置线性递增后归一</td><td>首尾期望差 10 倍，反例对照</td><td class="n">≈63%</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card">
+      <h3><span class="dot" style="background:var(--red);box-shadow:0 0 10px var(--red)"></span>它解决什么问题</h3>
+      <div class="prose">
+        <p>关于抢红包流传着大量互相矛盾的经验之谈：「第一个抢的一定最多」「最后一个最惨」「等别人抢完能捡漏」。这些说法之所以能流传，是因为<strong>单次结果什么都证明不了</strong>。</p>
+        <p>本工具的设计出发点只有一个：把「一次」和「一万次」放在同一个界面里，让你亲眼看到两者的差别。</p>
+        <h4>推荐玩法</h4>
+        <ul>
+          <li>先在 <span class="kbd">01</span> 用默认参数发三次红包，感受三次的巨大差异。</li>
+          <li>再到 <span class="kbd">03</span> 用同一组参数跑 10 万次，看分布收敛。</li>
+          <li>在 <span class="kbd">04</span> 打开纯随机，亲眼确认「先到先得」有多离谱。</li>
+          <li>最后去 <span class="kbd">02</span> 玩一局手气王接力，体会「赢是风险」。</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <h3><span class="dot" style="background:var(--green);box-shadow:0 0 10px var(--green)"></span>游戏规则</h3>
+      <div class="prose">
+        <h4>限时 60 秒</h4>
+        <p>红包散落在九个群里，你要盯着列表上亮起的「N 个红包」标记来回跳群，抢完一个立刻退出去找下一个。<strong>不是在一个群里等。</strong></p>
+        <h4>手气王接力</h4>
+        <p>抢到的钱进余额，但每轮手气最佳的人要按规矩发下一个红包（金额 = 上一包总额，份数沿用）。余额不够，出局。这是红包接龙的真实规则，也是它真正残酷的地方。</p>
+        <h4>自由模式</h4>
+        <p>没有计时，九个群随便逛，纯粹看热闹。</p>
+        <h4>技术实现要点</h4>
+        <ul>
+          <li>算法核心只写一份：主线程 <code>new Function()</code> 求值，Worker <code>new Blob()</code> 加载同一字符串。</li>
+          <li>金额全程以「分」为单位整数运算，杜绝 <code>0.1+0.2</code> 尾差被放大。</li>
+          <li>直方图分桶步长取整数 <code>step = ceil(maxBucket / bucketCount)</code>，避免半区间凹陷。</li>
+          <li><code>file://</code> 下 Worker 可能被拦截，已备主线程分块降级路径。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="dot" style="background:var(--purple);box-shadow:0 0 10px var(--purple)"></span>边界与取舍</h3>
+    <div class="conclusion">
+      <div class="cc"><h5>不碰微信的商标和 Logo</h5><p>项目复刻的是界面语汇（绿气泡、红包卡片、群聊布局、领取记录），不使用任何微信商标、图标或素材。</p></div>
+      <div class="cc" style="border-left-color:var(--green)"><h5>不做后端，不上传任何数据</h5><p>所有计算在浏览器内完成，没有任何数据离开设备。一个讲「随机」的工具，没有理由收集你的数据。</p></div>
+      <div class="cc" style="border-left-color:var(--gold)"><h5>不承诺「必赢策略」</h5><p>结论恰恰相反：公平的分配算法下不存在能提高期望值的抢法。它能给你的是一个准确的认知。</p></div>
+      <div class="cc" style="border-left-color:var(--blue)"><h5>单文件零依赖</h5><p>一个 HTML 文件，不引入第三方库、不用构建工具、不发网络请求，双击即可运行。</p></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div>红包实验室 · Hongbao Lab<br>1024 造物挑战参赛作品 · 单文件零依赖 · 全部本地计算</div>
+  <div style="text-align:right">¥ 全程以「分」为整数单位 · 最多 500,000 次模拟<br><span class="kbd">#/algo=single/count=10/total=8800/seed=…</span> 参数可复现</div>
+</footer>
+</div>
+<div class="toast" id="toast"></div>
+<!-- ================= 算法核心（唯一一份源码，主线程与 Worker 共用） ================= -->
+<script type="text/plain" id="core-src">
+/* 红包实验室 · 算法核心 */
+/* 全部金额以「分」为单位做整数运算，绝不使用浮点累加。 */
+
+function mulberry32(seed){
+  var a = (seed >>> 0) || 1;
+  return function(){
+    a = (a + 0x6D2B79F5) >>> 0;
+    var t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randInt(rnd, lo, hi){
+  if(hi < lo) hi = lo;
+  return lo + Math.floor(rnd() * (hi - lo + 1));
+}
+
+/* Bresenham 式累积取整：保证 Σ === total，且不会让某一位固定吃掉尾差 */
+function cumRound(raws, total){
+  var n = raws.length, out = new Array(n), acc = 0, sumRaw = 0, i;
+  for(i = 0; i < n; i++) sumRaw += raws[i];
+  if(sumRaw <= 0) sumRaw = 1;
+  var c = 0;
+  for(i = 0; i < n; i++){
+    c += raws[i] / sumRaw * total;
+    out[i] = Math.round(c) - acc;
+    acc = Math.round(c);
   }
+  out[n - 1] += total - acc;   /* 只修正一次，误差恒为 0 或 ±1 分 */
+  return out;
+}
+
+/* 保证每份至少 min 分，且总和精确等于 total。
+   先补齐缺口（从最小的一份开始加），再回收多余（只从高于 min 的份里扣），
+   因此只要 total >= count*min 就一定可行，绝不会出现「半个区间」或非法分配。 */
+function ensureMin(arr, total, min){
+  var n = arr.length, i;
+  if(n <= 0) return null;
+  if(total < n * min) return null;
+  var s = 0;
+  for(i = 0; i < n; i++){ if(!(arr[i] >= min)) arr[i] = min; s += arr[i]; }
+  /* 缺：把差额摊到最小的那些份上 */
+  while(s < total){
+    var bi = -1, bv = Infinity;
+    for(i = 0; i < n; i++){ if(arr[i] < bv){ bv = arr[i]; bi = i; } }
+    var add = Math.min(total - s, Math.max(1, Math.floor((total - s) / n)));
+    arr[bi] += add; s += add;
+  }
+  /* 多：从最大的那份往回扣，但不低于 min */
+  var guard = 0;
+  while(s > total && guard < n * 200){
+    for(i = 0; i < n && s > total; i++){
+      var cut = Math.min(s - total, arr[i] - min);
+      if(cut > 0){ arr[i] -= cut; s -= cut; }
+    }
+    guard++;
+  }
+  if(s !== total) return null;
+  for(i = 0; i < n; i++) if(arr[i] < min) return null;
+  return arr;
+}
+
+var MIN_CENT = 1; /* 0.01 元 */
+
+/* ① 二倍均值法 —— 微信拼手气红包同类，默认算法 */
+function allocDouble(total, count, rnd){
+  var out = new Array(count), remain = total, left = count, i;
+  for(i = 0; i < count; i++){
+    if(left === 1){ out[i] = remain; break; }
+    var avg2 = Math.floor(remain / left * 2);
+    var hi = avg2 - MIN_CENT;
+    if(hi < MIN_CENT) hi = MIN_CENT;
+    var maxAllow = remain - (left - 1) * MIN_CENT;
+    if(hi > maxAllow) hi = maxAllow;
+    var v = randInt(rnd, MIN_CENT, hi);
+    out[i] = v; remain -= v; left--;
+  }
+  return ensureMin(out, total, MIN_CENT);
+}
+
+/* ② 纯随机 —— 剩余金额里随便取，只保证后面每人至少 1 分 */
+function allocPure(total, count, rnd){
+  var out = new Array(count), remain = total, left = count, i;
+  for(i = 0; i < count; i++){
+    if(left === 1){ out[i] = remain; break; }
+    var hi = remain - (left - 1) * MIN_CENT;
+    if(hi < MIN_CENT) hi = MIN_CENT;
+    var v = randInt(rnd, MIN_CENT, hi);
+    out[i] = v; remain -= v; left--;
+  }
+  return ensureMin(out, total, MIN_CENT);
+}
+
+/* ③ 均分微扰 —— 均值 ±30% 后按比例归一 + 累积取整（位置完全无差别） */
+function allocJitter(total, count, rnd){
+  var raws = new Array(count), i;
+  for(i = 0; i < count; i++) raws[i] = 1 + (rnd() * 0.6 - 0.3);
+  var out = cumRound(raws, total);
+  return ensureMin(out, total, MIN_CENT);
+}
+
+/* ④ 后位加权 —— 越靠后越占优，用作反例对照 */
+function allocTail(total, count, rnd){
+  var raws = new Array(count), i, sw = 0;
+  for(i = 0; i < count; i++){ raws[i] = (i + 1) * (0.75 + rnd() * 0.5); sw += raws[i]; }
+  var out = cumRound(raws, total);
+  return ensureMin(out, total, MIN_CENT);
+}
+
+var ALGOS = {
+  double: { key:'double', name:'二倍均值法', short:'二倍均值', color:'#ffc53d', fn:allocDouble },
+  pure:   { key:'pure',   name:'纯随机',     short:'纯随机',   color:'#ff4d4f', fn:allocPure },
+  jitter: { key:'jitter', name:'均分微扰',   short:'均分微扰', color:'#07c160', fn:allocJitter },
+  tail:   { key:'tail',   name:'后位加权',   short:'后位加权', color:'#9a6bff', fn:allocTail }
+};
+var ALGO_ORDER = ['double','pure','jitter','tail'];
+
+function allocate(algoKey, total, count, rnd){
+  var a = ALGOS[algoKey] || ALGOS.double;
+  if(total < count * MIN_CENT) return null;
+  return a.fn(total, count, rnd);
+}
+
+/* ---------- 统计聚合器（流式，支持 Worker 分块合并） ---------- */
+function makeAgg(total, count, bucketTarget){
+  var maxC = total - (count - 1) * MIN_CENT;
+  var nB = Math.min(bucketTarget || 48, maxC);
+  var step = Math.ceil(maxC / nB);          /* 整数步长，避免半区间凹陷 */
+  var nb = Math.ceil(maxC / step);
+  return {
+    total: total, count: count,
+    maxC: maxC, step: step, nb: nb,
+    runs: 0,
+    hist: new Float64Array(nb),              /* 单份金额分布 */
+    kingPos: new Float64Array(count),        /* 手气王出现在第几位 */
+    sSum: new Float64Array(count),           /* 各位置金额和 */
+    sSq:  new Float64Array(count),           /* 各位置金额平方和 */
+    gSum: 0, gSq: 0, gN: 0,
+    ties: 0
+  };
+}
+
+function aggMerge(dst, src){
+  dst.runs += src.runs;
+  for(var i = 0; i < dst.hist.length; i++) dst.hist[i] += src.hist[i];
+  for(i = 0; i < dst.kingPos.length; i++){
+    dst.kingPos[i] += src.kingPos[i];
+    dst.sSum[i] += src.sSum[i];
+    dst.sSq[i]  += src.sSq[i];
+  }
+  dst.gSum += src.gSum; dst.gSq += src.gSq; dst.gN += src.gN; dst.ties += src.ties;
+  return dst;
+}
+
+function aggFeed(agg, amt){
+  var mx = -1, mi = 0, i, v;
+  for(i = 0; i < amt.length; i++){
+    v = amt[i];
+    agg.hist[Math.min(agg.nb - 1, Math.floor((v - MIN_CENT) / agg.step))] += 1;
+    agg.sSum[i] += v; agg.sSq[i] += v * v; agg.gSum += v; agg.gSq += v * v; agg.gN++;
+    if(v > mx){ mx = v; mi = i; }
+    else if(v === mx) agg.ties++;
+  }
+  agg.kingPos[mi] += 1;
+  agg.runs++;
+}
+
+function aggFinish(agg){
+  var n = agg.count, i;
+  var mean = agg.gN ? agg.gSum / agg.gN : 0;
+  var sd = agg.gN ? Math.sqrt(Math.max(0, agg.gSq / agg.gN - mean * mean)) : 0;
+  var posMean = [], posSd = [];
+  for(i = 0; i < n; i++){
+    var m = agg.runs ? agg.sSum[i] / agg.runs : 0;
+    var s = agg.runs ? Math.sqrt(Math.max(0, agg.sSq[i] / agg.runs - m * m)) : 0;
+    posMean.push(m); posSd.push(s);
+  }
+  var kingRate = [];
+  for(i = 0; i < n; i++) kingRate.push(agg.runs ? agg.kingPos[i] / agg.runs : 0);
+  return {
+    total: agg.total, count: agg.count, runs: agg.runs,
+    step: agg.step, nb: agg.nb, maxC: agg.maxC,
+    hist: Array.prototype.slice.call(agg.hist),
+    posMean: posMean, posSd: posSd, kingRate: kingRate,
+    mean: mean, sd: sd, cv: mean ? sd / mean : 0,
+    firstLastMeanGap: posMean.length && posMean[0]
+      ? Math.abs(posMean[posMean.length - 1] - posMean[0]) / posMean[0] : 0,
+    lastFirstSdRatio: posSd.length && posSd[0] ? posSd[posSd.length - 1] / posSd[0] : 0,
+    kingTopPos: argmax(kingRate),
+    ties: agg.ties
+  };
+}
+
+function argmax(a){
+  var bi = 0;
+  for(var i = 1; i < a.length; i++) if(a[i] > a[bi]) bi = i;
+  return bi;
+}
+
+/* 单次运行一个红包并喂给聚合器 */
+function runOnce(agg, algoKey, seedFn){
+  var amt = allocate(algoKey, agg.total, agg.count, seedFn);
+  if(amt) aggFeed(agg, amt);
+  return amt;
 }
 </script>
-</head>
-  <body>
-    <div id="root"></div>
-  </body>
+<script>
+/* =======================================================================
+   红包实验室 · 主程序（零依赖 / 无网络请求 / 全部本地计算）
+   ======================================================================= */
+(function(){
+'use strict';
+
+/* ---------- 载入唯一一份算法核心：主线程用 new Function() 求值 ---------- */
+var CORE_SRC = document.getElementById('core-src').textContent;
+var Core = (new Function(CORE_SRC + '\n;return {mulberry32:mulberry32,randInt:randInt,allocate:allocate,ALGOS:ALGOS,ALGO_ORDER:ALGO_ORDER,makeAgg:makeAgg,aggFeed:aggFeed,aggFinish:aggFinish,aggMerge:aggMerge,runOnce:runOnce,cumRound:cumRound,MIN_CENT:1};'))();
+
+var $  = function(s,r){ return (r||document).querySelector(s); };
+var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+
+function fmtY(cents, dp){
+  cents = Math.round(cents || 0);
+  var v = cents / 100;
+  return '¥' + v.toFixed(dp===undefined?2:dp);
+}
+function num(n, dp){
+  if(!isFinite(n)) return '—';
+  return n.toLocaleString('en-US',{minimumFractionDigits:dp||0,maximumFractionDigits:dp||0});
+}
+function pct(x, dp){ return (x*100).toFixed(dp===undefined?1:dp) + '%'; }
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+var toastEl = $('#toast'), toastTid = null;
+function toast(msg){
+  toastEl.textContent = msg; toastEl.classList.add('on');
+  clearTimeout(toastTid); toastTid = setTimeout(function(){ toastEl.classList.remove('on'); }, 2200);
+}
+
+/* ---------- 全局参数（视图共用一套） ---------- */
+var P = { total:8800, count:10, algo:'double', seed:'', times:100000, dtimes:50000 };
+
+function makeRnd(){
+  var s = (P.seed === '' || P.seed == null) ? null : hashStr(String(P.seed));
+  if(s === null) return Math.random.bind(Math);
+  return Core.mulberry32(s);
+}
+function hashStr(str){
+  var h = 2166136261 >>> 0;
+  for(var i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+
+/* ---------- URL hash 参数化（可复现） ---------- */
+function writeHash(){
+  var parts = ['view='+curView,'algo='+P.algo,'total='+P.total,'count='+P.count,
+               'times='+P.times,'dtimes='+P.dtimes];
+  if(P.seed !== '') parts.push('seed='+encodeURIComponent(P.seed));
+  try{ history.replaceState(null,'','#'+parts.join('/')); }catch(e){ location.hash = parts.join('/'); }
+}
+function readHash(){
+  var h = (location.hash||'').replace(/^#/,'');
+  if(!h) return;
+  h.split(/[\/&]/).forEach(function(kv){
+    var p = kv.split('='); if(p.length<2) return;
+    var k = p[0], v = decodeURIComponent(p[1]);
+    if(k==='algo' && Core.ALGOS[v]) P.algo = v;
+    else if(k==='total') P.total = clamp(parseInt(v,10)||8800, 100, 100000);
+    else if(k==='count') P.count = clamp(parseInt(v,10)||10, 2, 50);
+    else if(k==='times') P.times = clamp(parseInt(v,10)||100000, 10000, 500000);
+    else if(k==='dtimes') P.dtimes = clamp(parseInt(v,10)||50000, 10000, 500000);
+    else if(k==='seed') P.seed = v;
+    else if(k==='view') wantView = v;
+  });
+}
+var wantView = 'single';
+
+/* =======================================================================
+   3D Canvas 基础绘制（手绘，不使用任何图表库）
+   ======================================================================= */
+function setupCanvas(cv, ratio){
+  var w = cv.parentNode.clientWidth || 600;
+  var h = Math.round(w * (ratio || 0.42));
+  h = clamp(h, 180, 460);
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+  cv.style.height = h+'px';
+  var g = cv.getContext('2d');
+  g.setTransform(dpr,0,0,dpr,0,0);
+  return {g:g,w:w,h:h};
+}
+function clear(g,w,h){
+  g.clearRect(0,0,w,h);
+  var grd = g.createLinearGradient(0,0,0,h);
+  grd.addColorStop(0,'rgba(255,255,255,.035)');
+  grd.addColorStop(1,'rgba(0,0,0,.28)');
+  g.fillStyle = grd; g.fillRect(0,0,w,h);
+}
+function shade(hex, f){
+  var c = hex.replace('#',''); if(c.length===3) c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+  var r=parseInt(c.substr(0,2),16), gg=parseInt(c.substr(2,2),16), b=parseInt(c.substr(4,2),16);
+  function k(v){ return clamp(Math.round(v*f),0,255); }
+  return 'rgb('+k(r)+','+k(gg)+','+k(b)+')';
+}
+/* 挤出深度向量（等角投影风格） */
+var DX = 9, DY = -6;
+function bar3d(g,x,y,w,h,color,glow){
+  var top = h > 2;
+  /* 侧面 */
+  g.fillStyle = shade(color, .48);
+  g.beginPath();
+  g.moveTo(x+w, y); g.lineTo(x+w+DX, y+DY); g.lineTo(x+w+DX, y+h+DY); g.lineTo(x+w, y+h);
+  g.closePath(); g.fill();
+  /* 顶面 */
+  if(top){
+    g.fillStyle = shade(color, 1.28);
+    g.beginPath();
+    g.moveTo(x, y); g.lineTo(x+DX, y+DY); g.lineTo(x+w+DX, y+DY); g.lineTo(x+w, y);
+    g.closePath(); g.fill();
+  }
+  /* 正面 */
+  var grd = g.createLinearGradient(x, y, x, y+h);
+  grd.addColorStop(0, shade(color, 1.12));
+  grd.addColorStop(1, shade(color, .72));
+  g.fillStyle = grd;
+  if(glow){ g.shadowColor = color; g.shadowBlur = glow; }
+  g.fillRect(x, y, w, h);
+  g.shadowBlur = 0;
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
+  g.strokeRect(x+.5, y+.5, w-1, h-1);
+}
+function axis(g, box){
+  g.strokeStyle = 'rgba(255,255,255,.16)'; g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(box.l, box.t); g.lineTo(box.l, box.b); g.lineTo(box.r, box.b);
+  g.stroke();
+  g.setLineDash([3,4]);
+  g.strokeStyle = 'rgba(255,255,255,.07)';
+  for(var i=1;i<=4;i++){
+    var y = box.b - (box.b-box.t)*i/4;
+    g.beginPath(); g.moveTo(box.l, y); g.lineTo(box.r, y); g.stroke();
+  }
+  g.setLineDash([]);
+}
+function label(g, text, x, y, color, size, align){
+  g.fillStyle = color || 'rgba(255,255,255,.5)';
+  g.font = (size||10)+'px ui-monospace, Menlo, Consolas, monospace';
+  g.textAlign = align || 'center';
+  g.fillText(text, x, y);
+}
+/* 错峰生长动画驱动 */
+function animateBars(cv, drawFn, dur, stagger){
+  var t0 = performance.now();
+  var state = { raf:null };
+  function frame(now){
+    var e = clamp((now - t0)/dur, 0, 1);
+    drawFn(e);
+    if(e < 1) state.raf = requestAnimationFrame(frame);
+  }
+  state.raf = requestAnimationFrame(frame);
+  return state;
+}
+var easeOut = function(t){ return 1 - Math.pow(1-t, 3); };
+
+/* =======================================================================
+   视图切换
+   ======================================================================= */
+var curView = 'single';
+function switchView(v){
+  curView = v;
+  $$('.tab').forEach(function(b){ b.classList.toggle('on', b.dataset.v===v); });
+  $$('.view').forEach(function(s){ s.classList.toggle('on', s.id==='view-'+v); });
+  document.body.classList.toggle('gamefull', v==='game' && isMobile());
+  writeHash();
+  if(v==='single'){ drawMiniDist(); layoutSingle(); }
+  if(v==='sim'){ redrawSim(); }
+  if(v==='duel'){ redrawDuel(); }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function isMobile(){ return window.matchMedia('(max-width:760px)').matches; }
+$('#tabs').addEventListener('click', function(e){
+  var b = e.target.closest('.tab'); if(b) switchView(b.dataset.v);
+});
+
+/* =======================================================================
+   控件绑定
+   ======================================================================= */
+function syncRangeFill(el){
+  var p = (el.value - el.min) / (el.max - el.min) * 100;
+  el.style.setProperty('--p', p+'%');
+}
+function bindRange(id, outId, fn){
+  var el = $(id);
+  syncRangeFill(el);
+  el.addEventListener('input', function(){ syncRangeFill(el); fn(+el.value); });
+}
+var TIMES_STEPS = [10000,20000,50000,100000,200000,500000];
+
+function buildAlgoSeg(){
+  var host = $('#seg-algo');
+  host.innerHTML = Core.ALGO_ORDER.map(function(k){
+    var a = Core.ALGOS[k];
+    var desc = {double:'微信同类 · 默认',pure:'先到先得极端版',jitter:'最公平',tail:'偏心反例'}[k];
+    return '<button class="chip'+(P.algo===k?' on':'')+'" data-k="'+k+'">'+a.name+'<small>'+desc+'</small></button>';
+  }).join('');
+  host.onclick = function(e){
+    var b = e.target.closest('.chip'); if(!b) return;
+    P.algo = b.dataset.k;
+    $$('#seg-algo .chip').forEach(function(c){ c.classList.toggle('on', c.dataset.k===P.algo); });
+    writeHash(); updateEngineNote();
+  };
+}
+
+function applyParamsToUI(){
+  $('#r-total').value = Math.round(P.total/100);
+  $('#o-total').textContent = fmtY(P.total);
+  $('#r-count').value = P.count;
+  $('#o-count').textContent = P.count;
+  $('#i-seed').value = P.seed;
+  var ti = TIMES_STEPS.indexOf(P.times);
+  $('#r-times').value = ti<0 ? 3 : ti;
+  $('#o-times').textContent = num(P.times);
+  var di = TIMES_STEPS.indexOf(P.dtimes);
+  $('#r-dtimes').value = di<0 ? 2 : di;
+  $('#o-dtimes').textContent = num(P.dtimes);
+  $('#r-dtotal').value = Math.round(P.total/100);
+  $('#o-dtotal').textContent = fmtY(P.total);
+  $('#r-dcount').value = P.count;
+  $('#o-dcount').textContent = P.count;
+  ['#r-total','#r-count','#r-times','#r-dtimes','#r-dtotal','#r-dcount'].forEach(function(s){ syncRangeFill($(s)); });
+  buildAlgoSeg();
+  updateEngineNote();
+}
+
+function bindControls(){
+  bindRange('#r-total','#o-total',function(v){ P.total = Math.round(v*100); $('#o-total').textContent = fmtY(P.total); writeHash(); });
+  bindRange('#r-count','#o-count',function(v){ P.count = v; $('#o-count').textContent = v; writeHash(); });
+  bindRange('#r-times','#o-times',function(v){ P.times = TIMES_STEPS[v]; $('#o-times').textContent = num(P.times); writeHash(); });
+  bindRange('#r-dtimes','#o-dtimes',function(v){ P.dtimes = TIMES_STEPS[v]; $('#o-dtimes').textContent = num(P.dtimes); writeHash(); });
+  bindRange('#r-dtotal','#o-dtotal',function(v){ P.total = Math.round(v*100); $('#o-total').textContent = fmtY(P.total); $('#r-total').value=v; syncRangeFill($('#r-total')); writeHash(); });
+  bindRange('#r-dcount','#o-dcount',function(v){ P.count = v; $('#o-count').textContent=v; $('#r-count').value=v; syncRangeFill($('#r-count')); writeHash(); });
+  $('#i-seed').addEventListener('input', function(){ P.seed = this.value.trim(); writeHash(); });
+  $('#presets').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    P.total = Math.round(parseFloat(b.dataset.t)*100);
+    P.count = +b.dataset.c;
+    applyParamsToUI(); writeHash();
+    toast('已套用参数 '+b.textContent.trim());
+  });
+  $$('#view-sim .presets button').forEach(function(b){
+    b.addEventListener('click', function(){
+      P.times = +b.dataset.n;
+      var i = TIMES_STEPS.indexOf(P.times); if(i>=0){ $('#r-times').value=i; syncRangeFill($('#r-times')); }
+      $('#o-times').textContent = num(P.times); writeHash();
+    });
+  });
+  $('#b-reseed').addEventListener('click', function(){
+    var s = String(Math.floor(Math.random()*1e9));
+    P.seed = s; $('#i-seed').value = s; writeHash(); runSingle();
+  });
+  $('#b-send').addEventListener('click', runSingle);
+  $('#b-share').addEventListener('click', copyLink);
+  $('#b-card').addEventListener('click', makeShareCard);
+  $('#b-run').addEventListener('click', startSim);
+  $('#b-stop').addEventListener('click', stopSim);
+  $('#b-duel').addEventListener('click', startDuel);
+  $('#b-duelstop').addEventListener('click', stopDuel);
+  $$('.algoCard').forEach(function(c){
+    c.addEventListener('click', function(){
+      P.algo = c.dataset.algo; applyParamsToUI(); writeHash();
+      switchView('single'); runSingle();
+      toast('已切换到「'+Core.ALGOS[P.algo].name+'」并重新发放');
+    });
+  });
+}
+
+function copyLink(){
+  writeHash();
+  var url = location.href;
+  var done = function(){ toast('参数链接已复制，同参数 + 同种子 = 完全一样的结果'); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(done, function(){ fallbackCopy(url); done(); });
+  }else{ fallbackCopy(url); done(); }
+}
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.left='-9999px';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* =======================================================================
+   视图 01 · 单次实验
+   ======================================================================= */
+var lastResult = null, miniState = null;
+
+function layoutSingle(){
+  var cv = $('#c-mini');
+  if(cv && cv.parentNode.clientWidth) setupCanvas(cv, .3);
+}
+
+function runSingle(){
+  var rnd = makeRnd();
+  var amt = Core.allocate(P.algo, P.total, P.count, rnd);
+  if(!amt){ toast('金额太小：总额必须 ≥ 人数 × ¥0.01'); return; }
+  lastResult = amt;
+  var mx = Math.max.apply(null, amt), mi = amt.indexOf(mx);
+  var sorted = amt.slice().sort(function(a,b){ return a-b; });
+  var med = sorted.length%2 ? sorted[(sorted.length-1)/2] : (sorted[sorted.length/2-1]+sorted[sorted.length/2])/2;
+  var mean = P.total/P.count;
+  var sd = Math.sqrt(amt.reduce(function(s,v){ return s+(v-mean)*(v-mean); },0)/amt.length);
+
+  var host = $('#cards'); host.innerHTML = '';
+  var names = NICKS;
+  for(var i=0;i<amt.length;i++){
+    var d = document.createElement('div');
+    d.className = 'hbcard';
+    d.innerHTML =
+      '<div class="inner">'+
+        '<div class="hbface hbback"><span class="idx">#'+(i+1)+'</span><div class="seal">抢</div><span class="who">'+esc(names[i%names.length])+'</span></div>'+
+        '<div class="hbface hbfront'+(i===mi?' king':'')+'"><span class="pos">#'+(i+1)+'</span>'+(i===mi?'<span class="crown">👑</span>':'')+
+          '<div><div class="amt" data-v="'+amt[i]+'">¥0.00</div><div class="lab">'+(i===mi?'手气最佳':'第 '+(i+1)+' 位')+'</div></div>'+
+        '</div>'+
+      '</div>';
+    host.appendChild(d);
+  }
+  var cards = $$('.hbcard', host);
+  cards.forEach(function(c,i){
+    setTimeout(function(){
+      c.classList.add('flip');
+      var el = $('.amt', c);
+      rollNumber(el, +el.dataset.v);
+      updatePool(i+1, amt);
+    }, 260 + i*130);
+  });
+  setTimeout(function(){ updatePool(amt.length, amt); }, 260 + amt.length*130 + 120);
+
+  $('#s-king').textContent = fmtY(mx);
+  $('#s-kingpos').textContent = '第 '+(mi+1)+' 位抢到 · 是人均的 '+(mx/mean).toFixed(2)+' 倍';
+  $('#s-median').textContent = fmtY(med);
+  $('#s-range').textContent = fmtY(mx - sorted[0]);
+  $('#s-cv').textContent = pct(sd/mean, 0);
+  $('#s-caption').innerHTML = '<strong style="color:var(--gold2)">'+Core.ALGOS[P.algo].name+'</strong> · '+fmtY(P.total)+' ÷ '+P.count+' 人 · 种子 '+
+    (P.seed===''?'<span style="color:var(--dim)">随机</span>':'<code style="font-family:var(--mono)">'+esc(P.seed)+'</code>')+
+    ' —— 这一屏的作用不是给你答案，而是让你意识到：<b style="color:#ff8a8a">这只是运气。</b>';
+
+  drawMiniDist(mx);
+  writeHash();
+}
+function updatePool(done, amt){
+  var leftC = amt.slice(done).reduce(function(s,v){ return s+v; },0);
+  var leftN = amt.length - done;
+  $('#pool').style.width = (leftC/P.total*100)+'%';
+  $('#s-left').textContent = fmtY(leftC)+' / '+(leftN<0?0:leftN)+' 份';
+}
+function rollNumber(el, target){
+  var t0 = performance.now(), dur = 620;
+  function f(now){
+    var e = easeOut(clamp((now-t0)/dur,0,1));
+    el.textContent = fmtY(target*e);
+    if(e<1) requestAnimationFrame(f);
+    else el.textContent = fmtY(target);
+  }
+  requestAnimationFrame(f);
+}
+
+/* 迷你分布图（理论形状 or 快速预演 3000 次） */
+function drawMiniDist(markerCent){
+  var cv = $('#c-mini'); if(!cv || !cv.parentNode.clientWidth) return;
+  var o = setupCanvas(cv, .3), g = o.g, w = o.w, h = o.h;
+  clear(g,w,h);
+  var agg = Core.makeAgg(P.total, P.count, 40);
+  var rnd = makeRnd();
+  for(var i=0;i<3000;i++) Core.runOnce(agg, P.algo, rnd);
+  var st = Core.aggFinish(agg);
+  miniState = st;
+  var box = {l:44,t:24,r:w-18,b:h-30};
+  axis(g, box);
+  var maxH = Math.max.apply(null, st.hist);
+  var bw = (box.r-box.l)/st.hist.length;
+  for(i=0;i<st.hist.length;i++){
+    var bh = (st.hist[i]/maxH)*(box.b-box.t);
+    bar3d(g, box.l+i*bw+1, box.b-bh, Math.max(1,bw-2), bh, Core.ALGOS[P.algo].color, markerCent?0:4);
+  }
+  /* 均值线 */
+  var mxPos = box.l + clamp((st.mean-MINLO(st))/(st.maxC), 0, 1)*(box.r-box.l);
+  g.setLineDash([4,4]); g.strokeStyle='rgba(255,255,255,.55)'; g.lineWidth=1;
+  g.beginPath(); g.moveTo(mxPos, box.t); g.lineTo(mxPos, box.b); g.stroke(); g.setLineDash([]);
+  label(g, '均值 '+fmtY(st.mean,1), mxPos, box.t-8, 'rgba(255,255,255,.6)', 10);
+  if(markerCent){
+    var px = box.l + clamp((markerCent-1)/(st.nb*st.step),0,1)*(box.r-box.l);
+    g.strokeStyle='#fff'; g.lineWidth=2; g.shadowColor='#fff'; g.shadowBlur=10;
+    g.beginPath(); g.moveTo(px, box.t-2); g.lineTo(px, box.b); g.stroke(); g.shadowBlur=0;
+    label(g, '← 你这次的手气王', px+6, box.t+10, '#fff', 11, 'left');
+  }
+  label(g, fmtY(1,0), box.l, h-14, 'rgba(255,255,255,.35)', 9, 'left');
+  label(g, fmtY(st.maxC,0), box.r, h-14, 'rgba(255,255,255,.35)', 9, 'right');
+  label(g, '样本 3,000 次（仅示意形状，正式结论请看视图 03）', box.l, h-2, 'rgba(255,255,255,.28)', 9, 'left');
+}
+function MINLO(st){ return 1; }
+
+/* =======================================================================
+   视图 03 · 万次模拟（Worker + 主线程降级）
+   ======================================================================= */
+var workerURL = null, simWorker = null, duelWorker = null;
+function getWorkerURL(){
+  if(workerURL) return workerURL;
+  try{
+    var blob = new Blob([CORE_SRC + WORKER_BODY], {type:'text/javascript'});
+    workerURL = URL.createObjectURL(blob);
+  }catch(e){ workerURL = null; }
+  return workerURL;
+}
+var WORKER_BODY = '\n;self.onmessage=function(ev){\
+  var d=ev.data;\
+  if(d.type==="stop"){ self.__stop=true; return; }\
+  var agg=makeAgg(d.total,d.count,d.buckets);\
+  var rnd=d.seedFixed?mulberry32((d.seed+d.offset)>>>0):Math.random;\
+  var n=d.runs, done=0;\
+  for(var i=0;i<n;i++){ var a=allocate(d.algo,d.total,d.count,rnd); if(a) aggFeed(agg,a); done++; }\
+  self.postMessage({id:d.id, ok:true, agg:{total:agg.total,count:agg.count,runs:agg.runs,step:agg.step,nb:agg.nb,maxC:agg.maxC,\
+    hist:Array.prototype.slice.call(agg.hist),kingPos:Array.prototype.slice.call(agg.kingPos),\
+    sSum:Array.prototype.slice.call(agg.sSum),sSq:Array.prototype.slice.call(agg.sSq),\
+    gSum:agg.gSum,gSq:agg.gSq,gN:agg.gN,ties:agg.ties}, done:done});\
+};';
+
+function supportsWorker(){
+  if(typeof Worker === 'undefined') return false;
+  return !!getWorkerURL();
+}
+function updateEngineNote(){
+  var el = $('#engine-note');
+  if(!el) return;
+  el.innerHTML = supportsWorker()
+    ? '计算引擎：<b style="color:var(--green)">Web Worker</b>（后台线程分块计算，不阻塞界面）。当前算法：<b style="color:var(--gold2)">'+Core.ALGOS[P.algo].name+'</b>'
+    : '计算引擎：<b style="color:var(--orange)">主线程分块降级</b>（本环境下 Worker 不可用，例如 file:// 拦截），已改为切片让出 UI。当前算法：<b style="color:var(--gold2)">'+Core.ALGOS[P.algo].name+'</b>';
+}
+
+var simRunning = false, simCancel = false;
+function chunkPlan(total){
+  var chunk = 20000, list = [];
+  for(var i=0;i<total;i+=chunk) list.push(Math.min(chunk, total-i));
+  return list;
+}
+
+function startSim(){
+  if(simRunning) return;
+  if(P.total < P.count){ toast('总额太小，无法保证每人至少 ¥0.01'); return; }
+  simRunning = true; simCancel = false;
+  $('#b-run').disabled = true; $('#b-stop').disabled = false;
+  $('#sim-stat').innerHTML = '<span class="spinner"></span> 计算中…';
+  $('#sim-prog').style.width = '0%';
+  var t0 = performance.now();
+  var dst = Core.makeAgg(P.total, P.count, 48);
+  var chunks = chunkPlan(P.times), idx = 0, doneRuns = 0;
+  var useW = supportsWorker();
+
+  function finish(){
+    var st = Core.aggFinish(dst);
+    st.cost = performance.now() - t0;
+    renderSim(st);
+    simRunning = false;
+    $('#b-run').disabled = false; $('#b-stop').disabled = true;
+    $('#sim-stat').textContent = '完成 · ' + num(P.times) + ' 次';
+    $('#sim-prog').style.width = '100%';
+  }
+  function progress(){
+    var p = doneRuns / P.times;
+    $('#sim-prog').style.width = (p*100).toFixed(1)+'%';
+    $('#sim-stat').innerHTML = '<span class="spinner"></span> '+num(doneRuns)+' / '+num(P.times);
+  }
+
+  if(useW){
+    try{
+      simWorker = new Worker(getWorkerURL());
+      var seq = 0;
+      simWorker.onmessage = function(ev){
+        var m = ev.data;
+        aggMergeLocal(dst, m.agg);
+        doneRuns += m.done;
+        progress();
+        next();
+      };
+      simWorker.onerror = function(){ if(simWorker){simWorker.terminate(); simWorker=null;} mainLoop(); };
+      function next(){
+        if(simCancel){ cleanup(); finish(); return; }
+        if(idx >= chunks.length){ cleanup(); finish(); return; }
+        simWorker.postMessage({ id:seq++, type:'run', algo:P.algo, total:P.total, count:P.count,
+          runs:chunks[idx], buckets:48, seed:hashStr(String(P.seed||('s'+Math.random()))),
+          seedFixed:P.seed!=='', offset:idx });
+        idx++;
+      }
+      next();
+      return;
+    }catch(e){ /* fallthrough */ }
+  }
+  mainLoop();
+
+  function mainLoop(){
+    if(simCancel){ finish(); return; }
+    if(idx >= chunks.length){ finish(); return; }
+    var rnd = P.seed!=='' ? Core.mulberry32(hashStr(String(P.seed))+idx) : Math.random;
+    var n = chunks[idx++];
+    for(var i=0;i<n;i++){ var a = Core.allocate(P.algo, P.total, P.count, rnd); if(a) Core.aggFeed(dst, a); }
+    doneRuns += n; progress();
+    setTimeout(mainLoop, 0);
+  }
+  function cleanup(){ if(simWorker){ try{simWorker.terminate();}catch(e){} simWorker=null; } }
+}
+function aggMergeLocal(dst, src){
+  dst.runs += src.runs;
+  for(var i=0;i<dst.hist.length;i++) dst.hist[i] += src.hist[i];
+  for(i=0;i<dst.kingPos.length;i++){ dst.kingPos[i]+=src.kingPos[i]; dst.sSum[i]+=src.sSum[i]; dst.sSq[i]+=src.sSq[i]; }
+  dst.gSum += src.gSum; dst.gSq += src.gSq; dst.gN += src.gN; dst.ties += src.ties;
+}
+function stopSim(){
+  if(!simRunning) return;
+  simCancel = true;
+  if(simWorker){ try{ simWorker.postMessage({type:'stop'}); simWorker.terminate(); }catch(e){} simWorker=null; }
+  $('#sim-stat').textContent = '已停止（保留已完成样本）';
+}
+
+var lastSim = null;
+function renderSim(st){
+  lastSim = st;
+  $('#m-samples').textContent = num(st.gN || st.runs*st.count);
+  $('#m-cost').textContent = st.cost ? (st.cost<1000 ? Math.round(st.cost)+' ms' : (st.cost/1000).toFixed(2)+' s') : '—';
+  $('#m-mean').textContent = fmtY(st.mean,2);
+  $('#m-sd').textContent = fmtY(st.sd,2);
+  $('#m-cv').textContent = pct(st.cv,0);
+  $('#m-lastfirst').textContent = st.lastFirstSdRatio.toFixed(2)+'×';
+  var gapTxt = st.firstLastMeanGap < 0.01
+    ? '首位与末位的期望差只有 <b>'+pct(st.firstLastMeanGap,2)+'</b>，可以认为顺序不值钱。'
+    : '首位与末位的期望差高达 <b>'+pct(st.firstLastMeanGap,1)+'</b>，这套规则明显偏心某个位置。';
+  $('#sim-note').innerHTML = '【'+Core.ALGOS[P.algo].name+'】'+gapTxt+
+    ' 末位标准差是首位的 <b>'+st.lastFirstSdRatio.toFixed(2)+' 倍</b>——最后抢的人不是最惨，是最飘。手气王最常出现在第 <b>'+(st.kingTopPos+1)+'</b> 位。';
+  drawHist(st); drawKing(st); drawPosMean(st);
+}
+function redrawSim(){ if(lastSim){ drawHist(lastSim); drawKing(lastSim); drawPosMean(lastSim); } }
+
+function drawHist(st){
+  var cv = $('#c-hist'); if(!cv || !cv.parentNode.clientWidth) return;
+  var o = setupCanvas(cv, .4), g = o.g, w = o.w, h = o.h;
+  var box = {l:56,t:30,r:w-24,b:h-40};
+  var maxH = Math.max.apply(null, st.hist) || 1;
+  var bw = (box.r-box.l)/st.hist.length;
+  animateBars(cv, function(prog){
+    clear(g,w,h); axis(g, box);
+    for(var i=0;i<st.hist.length;i++){
+      var gp = easeOut(clamp(prog*1.6 - i/st.hist.length*0.55, 0, 1));
+      var bh = (st.hist[i]/maxH)*(box.b-box.t)*gp;
+      bar3d(g, box.l+i*bw+1, box.b-bh, Math.max(1.5,bw-2.5), bh, Core.ALGOS[P.algo].color, 6);
+    }
+    var mp = box.l + clamp((st.mean-1)/(st.nb*st.step),0,1)*(box.r-box.l);
+    g.setLineDash([5,4]); g.strokeStyle='rgba(255,255,255,.7)'; g.lineWidth=1.4;
+    g.beginPath(); g.moveTo(mp, box.t-6); g.lineTo(mp, box.b); g.stroke(); g.setLineDash([]);
+    label(g, '理论均值 '+fmtY(st.mean,2), mp, box.t-12, 'rgba(255,255,255,.8)', 10);
+    for(i=0;i<=4;i++){
+      var y = box.b-(box.b-box.t)*i/4;
+      label(g, num(Math.round(maxH*i/4)), box.l-8, y+3, 'rgba(255,255,255,.42)', 9, 'right');
+    }
+    for(i=0;i<=5;i++){
+      var xv = 1 + Math.round((st.maxC-1)*i/5);
+      var xx = box.l + (i/5)*(box.r-box.l);
+      label(g, fmtY(xv,0), xx, h-22, 'rgba(255,255,255,.42)', 9);
+    }
+    label(g, '出现次数 ↓ / 金额 →', box.l, h-6, 'rgba(255,255,255,.3)', 9, 'left');
+    label(g, num(st.runs)+' 轮 · 每桶 '+st.step+' 分', box.r, h-6, 'rgba(255,255,255,.3)', 9, 'right');
+  }, 900);
+}
+
+function drawKing(st){
+  var cv = $('#c-king'); if(!cv || !cv.parentNode.clientWidth) return;
+  var o = setupCanvas(cv, .46), g = o.g, w = o.w, h = o.h;
+  var box = {l:48,t:28,r:w-20,b:h-38};
+  var rates = st.kingRate, fair = 1/st.count;
+  var maxY = Math.max(Math.max.apply(null, rates), fair) * 1.18;
+  var bw = (box.r-box.l)/rates.length;
+  animateBars(cv, function(prog){
+    clear(g,w,h); axis(g, box);
+    var fy = box.b - (fair/maxY)*(box.b-box.t);
+    g.setLineDash([4,4]); g.strokeStyle='rgba(255,255,255,.45)';
+    g.beginPath(); g.moveTo(box.l, fy); g.lineTo(box.r, fy); g.stroke(); g.setLineDash([]);
+    label(g, '完全公平线 1/N = '+pct(fair,1), box.r-4, fy-6, 'rgba(255,255,255,.6)', 9, 'right');
+    for(var i=0;i<rates.length;i++){
+      var gp = easeOut(clamp(prog*1.6 - i/rates.length*0.5,0,1));
+      var bh = (rates[i]/maxY)*(box.b-box.t)*gp;
+      var col = rates[i] > fair*1.12 ? '#ffc53d' : (rates[i] < fair*0.88 ? '#4d7cff' : '#2dd4bf');
+      bar3d(g, box.l+i*bw+1.5, box.b-bh, Math.max(2,bw-3.5), bh, col, 5);
+      if(prog>0.85) label(g, (rates[i]*100).toFixed(1), box.l+i*bw+bw/2, box.b-bh-8, 'rgba(255,255,255,.6)', 8.5);
+      label(g, String(i+1), box.l+i*bw+bw/2, h-22, 'rgba(255,255,255,.4)', 9);
+    }
+    label(g, '第几位抢到 →', box.l, h-6, 'rgba(255,255,255,.3)', 9, 'left');
+    for(i=0;i<=3;i++){
+      var y = box.b-(box.b-box.t)*i/3;
+      label(g, pct(maxY*i/3,0), box.l-8, y+3, 'rgba(255,255,255,.42)', 9, 'right');
+    }
+  }, 900);
+}
+
+function drawPosMean(st){
+  var cv = $('#c-pos'); if(!cv || !cv.parentNode.clientWidth) return;
+  var o = setupCanvas(cv, .46), g = o.g, w = o.w, h = o.h;
+  var box = {l:52,t:26,r:w-20,b:h-38};
+  var n = st.posMean.length;
+  var maxY = 0, i;
+  for(i=0;i<n;i++) maxY = Math.max(maxY, st.posMean[i]+st.posSd[i]);
+  maxY *= 1.12;
+  var bw = (box.r-box.l)/n;
+  animateBars(cv, function(prog){
+    clear(g,w,h); axis(g, box);
+    for(i=0;i<n;i++){
+      var gp = easeOut(clamp(prog*1.6 - i/n*0.5,0,1));
+      var bh = (st.posMean[i]/maxY)*(box.b-box.t)*gp;
+      var x = box.l+i*bw+bw*0.18, ww = bw*0.64;
+      bar3d(g, x, box.b-bh, ww, bh, Core.ALGOS[P.algo].color, 4);
+      /* ±1σ 须线 */
+      var lo = clamp(st.posMean[i]-st.posSd[i],0,maxY), hi = st.posMean[i]+st.posSd[i];
+      var y1 = box.b-(hi/maxY)*(box.b-box.t), y2 = box.b-(lo/maxY)*(box.b-box.t);
+      var cx = x+ww/2;
+      g.strokeStyle='rgba(255,255,255,.72)'; g.lineWidth=1.4;
+      g.beginPath(); g.moveTo(cx,y1); g.lineTo(cx,y2); g.moveTo(cx-5,y1); g.lineTo(cx+5,y1); g.moveTo(cx-5,y2); g.lineTo(cx+5,y2); g.stroke();
+      label(g, String(i+1), box.l+i*bw+bw/2, h-22, 'rgba(255,255,255,.4)', 9);
+    }
+    label(g, '位置 →', box.l, h-6, 'rgba(255,255,255,.3)', 9, 'left');
+    for(i=0;i<=4;i++){
+      var y = box.b-(box.b-box.t)*i/4;
+      label(g, fmtY(maxY*i/4,1), box.l-8, y+3, 'rgba(255,255,255,.42)', 9, 'right');
+    }
+    label(g, '柱 = 均值 · 须 = ±1σ', box.r, box.t-10, 'rgba(255,255,255,.4)', 9, 'right');
+  }, 900);
+}
+/* =======================================================================
+   视图 04 · 算法对撞（四种算法依次跑，Worker / 主线程双路径）
+   ======================================================================= */
+var duelRunning = false, duelCancel = false, duelResults = null;
+
+function startDuel(){
+  if(duelRunning) return;
+  if(P.total < P.count){ toast('总额太小'); return; }
+  duelRunning = true; duelCancel = false;
+  $('#b-duel').disabled = true; $('#b-duelstop').disabled = false;
+  var keys = Core.ALGO_ORDER.slice();
+  var useW = supportsWorker();
+  var out = {}, idx = 0, t0 = performance.now();
+  var totalWork = keys.length * P.dtimes;
+
+  function step(){
+    if(duelCancel){ done(); return; }
+    if(idx >= keys.length){ done(); return; }
+    var k = keys[idx];
+    $('#duel-stat').innerHTML = '<span class="spinner"></span> '+Core.ALGOS[k].name+' ('+(idx+1)+'/'+keys.length+')';
+    runAlgo(k, function(st){
+      out[k] = st; idx++;
+      $('#duel-prog').style.width = clamp(Object.keys(out).length/keys.length,0,1)*100+'%';
+      step();
+    });
+  }
+  function done(){
+    duelResults = { map:out, cost:performance.now()-t0, times:P.dtimes, total:P.total, count:P.count };
+    renderDuel(duelResults);
+    duelRunning = false;
+    $('#b-duel').disabled = false; $('#b-duelstop').disabled = true;
+    $('#duel-stat').textContent = '完成 · 共 '+num(totalWork)+' 轮';
+    $('#duel-prog').style.width = '100%';
+  }
+  function runAlgo(key, cb){
+    var dst = Core.makeAgg(P.total, P.count, 48);
+    var chunks = chunkPlan(P.dtimes), ci = 0, localDone = 0;
+    if(useW){
+      try{
+        var wk = new Worker(getWorkerURL()), seq = 0;
+        wk.onmessage = function(ev){
+          aggMergeLocal(dst, ev.data.agg);
+          localDone += ev.data.done;
+          $('#duel-prog').style.width = clamp((idx + localDone/P.dtimes)/keys.length,0,1)*100+'%';
+          nextW();
+        };
+        wk.onerror = function(){ try{wk.terminate();}catch(e){} loopMain(); };
+        function nextW(){
+          if(duelCancel){ try{wk.terminate();}catch(e){} cb(Core.aggFinish(dst)); return; }
+          if(ci >= chunks.length){ try{wk.terminate();}catch(e){} cb(Core.aggFinish(dst)); return; }
+          wk.postMessage({ id:seq++, type:'run', algo:key, total:P.total, count:P.count, runs:chunks[ci++],
+            buckets:48, seed:hashStr(String(P.seed||key)+ci), seedFixed:P.seed!=='' , offset:ci});
+        }
+        nextW();
+        return;
+      }catch(e){}
+    }
+    loopMain();
+    function loopMain(){
+      if(duelCancel || ci>=chunks.length){ cb(Core.aggFinish(dst)); return; }
+      var rnd = P.seed!=='' ? Core.mulberry32(hashStr(String(P.seed)+key+ci)) : Math.random;
+      var n = chunks[ci++];
+      for(var i=0;i<n;i++){ var a=Core.allocate(key,P.total,P.count,rnd); if(a) Core.aggFeed(dst,a); }
+      localDone += n;
+      $('#duel-prog').style.width = clamp((idx + localDone/P.dtimes)/keys.length,0,1)*100+'%';
+      setTimeout(loopMain, 0);
+    }
+  }
+  step();
+}
+function stopDuel(){
+  if(!duelRunning) return;
+  duelCancel = true;
+  $('#duel-stat').textContent = '已停止';
+}
+
+function renderDuel(res){
+  var map = res.map, keys = Core.ALGO_ORDER.filter(function(k){ return map[k]; });
+  /* 表格 */
+  var best = {};
+  best.cv = Math.min.apply(null, keys.map(function(k){ return map[k].cv; }));
+  best.gap = Math.min.apply(null, keys.map(function(k){ return map[k].firstLastMeanGap; }));
+  var head = '<thead><tr><th>算法</th><th>离散系数 CV</th><th>标准差 σ</th><th>首尾期望差</th><th>末位/首位 σ</th><th>手气王最高位</th><th>该位概率</th><th>耗时</th></tr></thead>';
+  var rows = keys.map(function(k){
+    var st = map[k], a = Core.ALGOS[k];
+    var topPos = st.kingTopPos, topRate = st.kingRate[topPos];
+    return '<tr>'+
+      '<td style="color:'+a.color+';font-weight:700">'+a.name+'</td>'+
+      '<td class="n'+(st.cv===best.cv?' win':'')+'">'+pct(st.cv,0)+'</td>'+
+      '<td class="n">'+fmtY(st.sd,2)+'</td>'+
+      '<td class="n'+(st.firstLastMeanGap===best.gap?' win':'')+'">'+pct(st.firstLastMeanGap, st.firstLastMeanGap<0.02?2:1)+'</td>'+
+      '<td class="n">'+st.lastFirstSdRatio.toFixed(2)+'×</td>'+
+      '<td class="n">第 '+(topPos+1)+' 位</td>'+
+      '<td class="n">'+pct(topRate,1)+'</td>'+
+      '<td class="n" style="color:var(--dim)">'+num(res.times)+' 轮</td>'+
+    '</tr>';
+  }).join('');
+  $('#dueltbl').innerHTML = head + '<tbody>' + rows + '</tbody>';
+
+  var fairKey = keys.slice().sort(function(x,y){ return map[x].cv - map[y].cv; })[0];
+  var wildKey = keys.slice().sort(function(x,y){ return map[y].cv - map[x].cv; })[0];
+  var f = map[fairKey], wl = map[wildKey];
+  var ratio = wl.cv / (f.cv || 1e-9);
+  $('#duel-verdict').innerHTML =
+    '在 ¥'+(res.total/100).toFixed(2)+' / '+res.count+' 人、每种 '+num(res.times)+' 轮的条件下：'+
+    '<b>目前最公平的是「'+Core.ALGOS[fairKey].name+'」</b>（CV '+pct(f.cv,0)+'），'+
+    '最不均的是「'+Core.ALGOS[wildKey].name+'」（CV '+pct(wl.cv,0)+'），两者相差 <b>'+ratio.toFixed(1)+' 倍</b>。'+
+    (map.double && map.double.firstLastMeanGap < 0.02
+      ? ' 二倍均值法的首尾期望差仅 '+pct(map.double.firstLastMeanGap,2)+' —— <b>先抢后抢在期望上没有区别</b>；'
+      : '')+
+    '末位波动是首位的 '+((map.double&&map.double.lastFirstSdRatio)||0).toFixed(2)+' 倍，最后抢的人不是最惨，是最飘。';
+
+  drawDuelKing(map, keys);
+  drawDuelMean(map, keys);
+  drawDuelHist(map, keys);
+  $('#d-legend').innerHTML = keys.map(function(k){
+    return '<span><i style="background:'+Core.ALGOS[k].color+'"></i>'+Core.ALGOS[k].name+'</span>';
+  }).join('') + '<span style="color:var(--dim)">虚线 = 完全公平 1/N</span>';
+}
+function redrawDuel(){ if(duelResults) renderDuel(duelResults); }
+
+function drawDuelKing(map, keys){
+  var cv = $('#c-dking'); if(!cv || !cv.parentNode.clientWidth) return;
+  var o = setupCanvas(cv, .5), g = o.g, w = o.w, h = o.h;
+  var box = {l:52,t:26,r:w-20,b:h-36};
+  clear(g,w,h); axis(g, box);
+  var n = map[keys[0]].count, fair = 1/n;
+  var maxY = fair*1.3;
+  keys.forEach(function(k){ maxY = Math.max(maxY, Math.max.apply(null, map[k].kingRate)*1.15); });
+  var bw = (box.r-box.l)/(n-1||1);
+  var fy = box.b-(fair/maxY)*(box.b-box.t);
+  g.setLineDash([4,4]); g.strokeStyle='rgba(255,255,255,.4)';
+  g.beginPath(); g.moveTo(box.l,fy); g.lineTo(box.r,fy); g.stroke(); g.setLineDash([]);
+  label(g,'1/N = '+pct(fair,1), box.r-4, fy-6,'rgba(255,255,255,.55)',9,'right');
+  keys.forEach(function(k){
+    var st = map[k], c = Core.ALGOS[k].color;
+    g.strokeStyle = c; g.lineWidth = 2.4; g.shadowColor=c; g.shadowBlur=8;
+    g.beginPath();
+    for(var i=0;i<n;i++){
+      var x = box.l+i*bw, y = box.b-(st.kingRate[i]/maxY)*(box.b-box.t);
+      if(i===0) g.moveTo(x,y); else g.lineTo(x,y);
+    }
+    g.stroke(); g.shadowBlur=0;
+    for(i=0;i<n;i++){
+      var xx = box.l+i*bw, yy = box.b-(st.kingRate[i]/maxY)*(box.b-box.t);
+      g.fillStyle=c; g.beginPath(); g.arc(xx,yy,2.6,0,Math.PI*2); g.fill();
+    }
+  });
+  for(var i=0;i<n;i+=Math.ceil(n/12)) label(g, String(i+1), box.l+i*bw, h-20,'rgba(255,255,255,.4)',9);
+  label(g,'位置 →', box.l, h-4,'rgba(255,255,255,.3)',9,'left');
+  for(i=0;i<=3;i++) label(g, pct(maxY*i/3,0), box.l-8, box.b-(box.b-box.t)*i/3+3,'rgba(255,255,255,.4)',9,'right');
+}
+
+function drawDuelMean(map, keys){
+  var cv = $('#c-dmean'); if(!cv || !cv.parentNode.clientWidth) return;
+  var o = setupCanvas(cv, .5), g = o.g, w = o.w, h = o.h;
+  var box = {l:52,t:26,r:w-20,b:h-36};
+  clear(g,w,h); axis(g, box);
+  var n = map[keys[0]].count;
+  var maxY = 0;
+  keys.forEach(function(k){ maxY = Math.max(maxY, Math.max.apply(null, map[k].posMean)); });
+  maxY *= 1.12;
+  var gw = (box.r-box.l)/n, inner = (gw-6)/keys.length;
+  for(var i=0;i<n;i++){
+    for(var j=0;j<keys.length;j++){
+      var k = keys[j], st = map[k];
+      var bh = (st.posMean[i]/maxY)*(box.b-box.t);
+      bar3d(g, box.l+i*gw+3+j*inner, box.b-bh, Math.max(1.5,inner-1.2), bh, Core.ALGOS[k].color, 0);
+    }
+    if(n<=20 || i%2===0) label(g, String(i+1), box.l+i*gw+gw/2, h-20,'rgba(255,255,255,.4)',9);
+  }
+  label(g,'位置 →', box.l, h-4,'rgba(255,255,255,.3)',9,'left');
+  for(i=0;i<=4;i++) label(g, fmtY(maxY*i/4,1), box.l-8, box.b-(box.b-box.t)*i/4+3,'rgba(255,255,255,.4)',9,'right');
+}
+
+function drawDuelHist(map, keys){
+  var cv = $('#c-dhist'); if(!cv || !cv.parentNode.clientWidth) return;
+  var o = setupCanvas(cv, .5), g = o.g, w = o.w, h = o.h;
+  var box = {l:52,t:26,r:w-20,b:h-40};
+  clear(g,w,h); axis(g, box);
+  var nb = map[keys[0]].nb;
+  /* 归一化成密度，逐条画填充带 */
+  var lanes = keys.length, laneH = (box.b-box.t)/lanes;
+  keys.forEach(function(k, li){
+    var st = map[k], c = Core.ALGOS[k].color;
+    var mx = Math.max.apply(null, st.hist) || 1;
+    var base = box.b - li*laneH;
+    g.fillStyle = 'rgba(255,255,255,.05)';
+    g.fillRect(box.l, base-laneH, box.r-box.l, laneH);
+    g.beginPath();
+    g.moveTo(box.l, base);
+    for(var i=0;i<st.hist.length;i++){
+      var x = box.l + (i/(st.hist.length-1))*(box.r-box.l);
+      var y = base - (st.hist[i]/mx)*(laneH-8);
+      g.lineTo(x,y);
+    }
+    g.lineTo(box.r, base); g.closePath();
+    g.globalAlpha = .5; g.fillStyle = c; g.fill(); g.globalAlpha = 1;
+    g.strokeStyle = c; g.lineWidth = 1.6;
+    g.beginPath();
+    for(i=0;i<st.hist.length;i++){
+      var xx = box.l + (i/(st.hist.length-1))*(box.r-box.l);
+      var yy = base - (st.hist[i]/mx)*(laneH-8);
+      if(i===0) g.moveTo(xx,yy); else g.lineTo(xx,yy);
+    }
+    g.stroke();
+    label(g, Core.ALGOS[k].short, box.l+6, base-6, c, 10, 'left');
+  });
+  label(g, fmtY(1,0), box.l, h-22,'rgba(255,255,255,.4)',9,'left');
+  label(g, fmtY(map[keys[0]].maxC,0), box.r, h-22,'rgba(255,255,255,.4)',9,'right');
+  label(g, '单份金额（分）→ 每条带独立归一化，看形状而非高度', box.l, h-6,'rgba(255,255,255,.3)',9,'left');
+}
+
+/* =======================================================================
+   分享卡 · Canvas 手绘 1080×1350 竖版
+   ======================================================================= */
+function makeShareCard(){
+  if(!lastResult){ runSingle(); }
+  var W = 1080, H = 1350;
+  var cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  var g = cv.getContext('2d');
+
+  /* 背景 */
+  var bg = g.createLinearGradient(0,0,W,H);
+  bg.addColorStop(0,'#1a0d10'); bg.addColorStop(.45,'#0d0f18'); bg.addColorStop(1,'#0a1220');
+  g.fillStyle = bg; g.fillRect(0,0,W,H);
+  var rg = g.createRadialGradient(W*.18,-60,40,W*.18,-60,760);
+  rg.addColorStop(0,'rgba(255,77,79,.42)'); rg.addColorStop(1,'rgba(255,77,79,0)');
+  g.fillStyle = rg; g.fillRect(0,0,W,H);
+  rg = g.createRadialGradient(W*.9,H*.28,20,W*.9,H*.28,620);
+  rg.addColorStop(0,'rgba(255,197,61,.3)'); rg.addColorStop(1,'rgba(255,197,61,0)');
+  g.fillStyle = rg; g.fillRect(0,0,W,H);
+
+  function txt(t,x,y,size,color,align,weight,mono){
+    g.fillStyle=color; g.textAlign=align||'left';
+    g.font=(weight||'700')+' '+size+'px '+(mono?'ui-monospace,Menlo,Consolas,monospace':'"PingFang SC","Microsoft YaHei",sans-serif');
+    g.fillText(t,x,y);
+  }
+
+  /* 头部 */
+  g.save();
+  g.translate(70,86);
+  roundRect(g,0,0,96,96,26); 
+  var lg = g.createLinearGradient(0,0,96,96);
+  lg.addColorStop(0,'#ff6a6a'); lg.addColorStop(1,'#b81f2b');
+  g.fillStyle=lg; g.fill();
+  g.restore();
+  txt('🧧',118,152,46,'#fff','center');
+  txt('红包实验室',200,132,52,'#ffe58a','left','800');
+  txt('HONGBAO LAB · MONTE CARLO REPORT',202,168,20,'rgba(255,255,255,.45)','left','600',true);
+
+  /* 参数条 */
+  var py = 232;
+  roundRect(g,70,py,W-140,96,20); g.fillStyle='rgba(255,255,255,.06)'; g.fill();
+  g.strokeStyle='rgba(255,255,255,.12)'; g.lineWidth=1.5; g.stroke();
+  var info = [
+    ['算法', Core.ALGOS[P.algo].name],
+    ['总额', fmtY(P.total)],
+    ['人数', P.count+' 人'],
+    ['种子', P.seed===''?'随机':P.seed]
+  ];
+  info.forEach(function(it,i){
+    var x = 110 + i*(W-220)/4;
+    txt(it[0], x, py+38, 20, 'rgba(255,255,255,.45)','left','600');
+    txt(String(it[1]), x, py+74, 30, '#fff','left','800', i===3);
+  });
+
+  /* 快速模拟取数据（与视图 03 同一核心） */
+  var agg = Core.makeAgg(P.total, P.count, 44);
+  var rnd = makeRnd();
+  for(var i=0;i<20000;i++) Core.runOnce(agg, P.algo, rnd);
+  var st = Core.aggFinish(agg);
+
+  /* 直方图 */
+  var cx0=70, cy0=380, cw=W-140, ch=430;
+  roundRect(g,cx0,cy0,cw,ch,22);
+  g.fillStyle='rgba(0,0,0,.32)'; g.fill();
+  g.strokeStyle='rgba(255,255,255,.1)'; g.stroke();
+  txt('单个红包金额分布 · 20,000 次模拟',cx0+28,cy0+44,24,'#ffc53d','left','700');
+  var bx={l:cx0+60,t:cy0+90,r:cx0+cw-40,b:cy0+ch-60};
+  var maxH=Math.max.apply(null,st.hist), bwid=(bx.r-bx.l)/st.hist.length;
+  DX=6; DY=-4;
+  for(i=0;i<st.hist.length;i++){
+    var bh=(st.hist[i]/maxH)*(bx.b-bx.t);
+    bar3d(g,bx.l+i*bwid+1,bx.b-bh,Math.max(2,bwid-3),bh,Core.ALGOS[P.algo].color,0);
+  }
+  g.strokeStyle='rgba(255,255,255,.18)'; g.beginPath();
+  g.moveTo(bx.l,bx.t); g.lineTo(bx.l,bx.b); g.lineTo(bx.r,bx.b); g.stroke();
+  txt(fmtY(1,0),bx.l,bx.b+30,18,'rgba(255,255,255,.45)','left','600',true);
+  txt(fmtY(st.maxC,0),bx.r,bx.b+30,18,'rgba(255,255,255,.45)','right','600',true);
+  DX=9; DY=-6;
+
+  /* 四项指标 */
+  var my=850, mw=(W-140-36)/4;
+  var mets=[['离散系数 CV',pct(st.cv,0),'#ff4d4f'],['整体均值',fmtY(st.mean,1),'#2dd4bf'],
+            ['标准差 σ',fmtY(st.sd,1),'#4d7cff'],['末位/首位 σ',st.lastFirstSdRatio.toFixed(2)+'×','#ffc53d']];
+  mets.forEach(function(m,i){
+    var x=70+i*(mw+12);
+    roundRect(g,x,my,mw,150,18); g.fillStyle='rgba(255,255,255,.05)'; g.fill();
+    g.strokeStyle='rgba(255,255,255,.1)'; g.stroke();
+    g.fillStyle=m[2]; g.fillRect(x,my,5,150);
+    txt(m[0],x+22,my+44,20,'rgba(255,255,255,.5)','left','600');
+    txt(m[1],x+22,my+104,38,m[2],'left','800',true);
+  });
+
+  /* 结论 */
+  var conclusion = buildConclusion(st);
+  roundRect(g,70,1040,W-140,190,20);
+  var cg=g.createLinearGradient(70,1040,W-70,1230);
+  cg.addColorStop(0,'rgba(255,197,61,.16)'); cg.addColorStop(1,'rgba(255,77,79,.12)');
+  g.fillStyle=cg; g.fill(); g.strokeStyle='rgba(255,197,61,.35)'; g.stroke();
+  txt('实验结论',98,1082,22,'#ffe58a','left','800');
+  wrapText(g, conclusion, 98, 1122, W-196, 34, 26, 'rgba(255,255,255,.86)');
+
+  /* 页脚 */
+  txt('红包实验室 · 1024 造物挑战参赛作品',70,1290,22,'rgba(255,255,255,.4)','left','600');
+  txt('单文件零依赖 · 全部本地计算 · 无网络请求',W-70,1290,22,'rgba(255,255,255,.4)','right','600');
+  txt('#/algo='+P.algo+'/total='+P.total+'/count='+P.count+(P.seed?'/seed='+P.seed:''),W-70,1326,20,'rgba(255,197,61,.6)','right','600',true);
+
+  /* 导出 */
+  var url = cv.toDataURL('image/png');
+  var a = document.createElement('a');
+  a.href = url; a.download = 'hongbao-lab-'+P.algo+'-'+P.total+'-'+P.count+'.png';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showCardPreview(url);
+  toast('分享卡已生成（1080 × 1350），可直接发朋友圈');
+}
+function buildConclusion(st){
+  if(st.firstLastMeanGap < 0.02){
+    return '在「'+Core.ALGOS[P.algo].name+'」下，先抢和后抢的期望值几乎一样（首尾差 '+pct(st.firstLastMeanGap,2)+'）。决定你拿多少的从来不是顺序，是运气——但末位的方差最大，最后抢的人不是最惨，是最飘。';
+  }
+  return '「'+Core.ALGOS[P.algo].name+'」的首尾期望差高达 '+pct(st.firstLastMeanGap,1)+'，说明这套规则本身就在偏心某个位置。手气王最常出现在第 '+(st.kingTopPos+1)+' 位（'+pct(st.kingRate[st.kingTopPos],1)+'）。对比之下才能看出二倍均值法有多克制。';
+}
+function roundRect(g,x,y,w,h,r){
+  g.beginPath();
+  g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r);
+  g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath();
+}
+function wrapText(g,text,x,y,maxW,lh,size,color){
+  g.fillStyle=color; g.font='700 '+size+'px "PingFang SC","Microsoft YaHei",sans-serif'; g.textAlign='left';
+  var line='', yy=y;
+  for(var i=0;i<text.length;i++){
+    var t=line+text[i];
+    if(g.measureText(t).width>maxW){ g.fillText(line,x,yy); line=text[i]; yy+=lh; }
+    else line=t;
+  }
+  if(line) g.fillText(line,x,yy);
+}
+function showCardPreview(url){
+  var d = document.createElement('div');
+  d.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:14px';
+  d.innerHTML='<img src="'+url+'" style="max-height:78vh;max-width:100%;border-radius:14px;box-shadow:0 30px 80px rgba(0,0,0,.7)">'+
+    '<div style="display:flex;gap:10px"><button class="btn sm gold" id="cp-save">下载图片</button><button class="btn sm" id="cp-close">关闭</button></div>';
+  document.body.appendChild(d);
+  d.querySelector('#cp-close').onclick=function(){ document.body.removeChild(d); };
+  d.querySelector('#cp-save').onclick=function(){
+    var a=document.createElement('a'); a.href=url; a.download='hongbao-lab.png'; a.click();
+  };
+  d.onclick=function(e){ if(e.target===d) document.body.removeChild(d); };
+}
+
+/* =======================================================================
+   NICKS · 全局昵称池（游戏与单次实验共用）
+   ======================================================================= */
+var NICKS = ['阿May','老王','Momo','小李同学','陈师傅','桃子','Jack','大熊','球球','阿凯',
+             '林深','见山','小满','Cassie','老张','土豆','慢慢','77','阿哲','小鹿',
+             'Nova','大鹏','栗子','阿信','青柠','Henry','苏三','丸子','老周','Mina'];
+
+/* =======================================================================
+   鼠标聚宝盆 · 金元宝螺旋汇聚 + 烟花
+   ======================================================================= */
+(function fxLayer(){
+  var cv = $('#fx'), g = cv.getContext('2d');
+  var W=0,H=0,DPR=Math.min(window.devicePixelRatio||1,2);
+  function resize(){
+    W = window.innerWidth; H = window.innerHeight;
+    cv.width = W*DPR; cv.height = H*DPR;
+    cv.style.width=W+'px'; cv.style.height=H+'px';
+    g.setTransform(DPR,0,0,DPR,0,0);
+  }
+  resize(); window.addEventListener('resize', function(){ resize(); layoutAll(); });
+
+  var mouse = {x:W/2,y:H/2, active:false};
+  window.addEventListener('mousemove', function(e){ mouse.x=e.clientX; mouse.y=e.clientY; mouse.active=true; });
+  window.addEventListener('touchmove', function(e){
+    if(e.touches[0]){ mouse.x=e.touches[0].clientX; mouse.y=e.touches[0].clientY; mouse.active=true; }
+  },{passive:true});
+
+  var INK = ['🪙','💰','🧧','✨','🪙','🪙'];
+  var motes = [], sparks = [];
+  var charge = 0, CHARGE_MAX = 100;   /* ≈10 秒 @ 每帧累积 */
+
+  function spawnMote(){
+    var side = Math.floor(Math.random()*4);
+    var x,y;
+    if(side===0){ x=Math.random()*W; y=-20; }
+    else if(side===1){ x=W+20; y=Math.random()*H; }
+    else if(side===2){ x=Math.random()*W; y=H+20; }
+    else { x=-20; y=Math.random()*H; }
+    motes.push({
+      x:x,y:y,vx:0,vy:0,ic:INK[Math.floor(Math.random()*INK.length)],
+      size:11+Math.random()*11, rot:Math.random()*6.28, vr:(Math.random()-.5)*.06,
+      state:'drift', life:0, wob:Math.random()*6.28, spiral:0
+    });
+  }
+  for(var i=0;i<14;i++){ spawnMote(); motes[i].x=Math.random()*W; motes[i].y=Math.random()*H; }
+
+  function burst(x,y){
+    for(var i=0;i<52;i++){
+      var a=Math.random()*6.28, sp=2+Math.random()*6.5;
+      sparks.push({x:x,y:y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-1.5,
+        life:1, ic:['🧨','✨','🪙','💥','🎆'][Math.floor(Math.random()*5)], size:10+Math.random()*14});
+    }
+  }
+
+  var last = performance.now(), fpsAcc=0, fpsN=0, fpsEl=null;
+  function tick(now){
+    var dt = Math.min(50, now-last); last = now;
+    g.clearRect(0,0,W,H);
+    /* 维护数量 */
+    while(motes.length < 18) spawnMote();
+
+    for(var i=motes.length-1;i>=0;i--){
+      var m = motes[i];
+      m.life += dt;
+      var dx = mouse.x-m.x, dy = mouse.y-m.y;
+      var dist = Math.sqrt(dx*dx+dy*dy) || 1;
+      if(m.state==='drift'){
+        /* 像羽毛一样飘来 */
+        m.wob += 0.02;
+        m.vx += (dx/dist)*0.012*dt/16 + Math.sin(m.wob)*0.02;
+        m.vy += (dy/dist)*0.012*dt/16 + Math.cos(m.wob*0.8)*0.018 + 0.006*dt/16;
+        m.vx *= 0.985; m.vy *= 0.985;
+        if(mouse.active && dist < 190){ m.state='spiral'; }
+      }else{
+        /* 螺旋吸入：切向 + 径向 */
+        var nx = dx/dist, ny = dy/dist;
+        var tx = -ny, ty = nx;
+        var pull = clamp(1 - dist/260, 0, 1);
+        charge += pull*0.42;
+        m.vx += (nx*0.16 + tx*0.30)*pull*dt/16;
+        m.vy += (ny*0.16 + ty*0.30)*pull*dt/16;
+        m.vx *= 0.94; m.vy *= 0.94;
+        m.rot += 0.14*pull;
+        if(dist < 26 || m.life > 14000){
+          motes.splice(i,1); continue;
+        }
+      }
+      m.x += m.vx*dt/16; m.y += m.vy*dt/16;
+      m.rot += m.vr;
+      if(m.life>26000){ motes.splice(i,1); continue; }
+      g.save();
+      g.translate(m.x, m.y); g.rotate(m.rot);
+      g.globalAlpha = m.state==='spiral' ? 0.95 : 0.5;
+      g.font = m.size+'px serif'; g.textAlign='center'; g.textBaseline='middle';
+      if(m.state==='spiral'){ g.shadowColor='#ffc53d'; g.shadowBlur=14; }
+      g.fillText(m.ic, 0, 0);
+      g.restore();
+    }
+
+    /* 攒满炸成烟花 */
+    if(charge >= CHARGE_MAX){ charge = 0; burst(mouse.x, mouse.y); }
+    if(charge > 4){
+      g.save();
+      g.strokeStyle='rgba(255,197,61,'+(0.18+charge/CHARGE_MAX*0.5)+')';
+      g.lineWidth=2.5;
+      g.beginPath(); g.arc(mouse.x, mouse.y, 26+charge*0.16, -1.57, -1.57 + 6.283*(charge/CHARGE_MAX)); g.stroke();
+      g.restore();
+    }
+
+    for(i=sparks.length-1;i>=0;i--){
+      var s = sparks[i];
+      s.x+=s.vx*dt/16; s.y+=s.vy*dt/16; s.vy+=0.12*dt/16; s.vx*=0.985; s.life-=0.016*dt/16*1.4;
+      if(s.life<=0){ sparks.splice(i,1); continue; }
+      g.save(); g.globalAlpha=clamp(s.life,0,1); g.font=s.size+'px serif';
+      g.textAlign='center'; g.fillText(s.ic,s.x,s.y); g.restore();
+    }
+
+    /* FPS 自检（写入 nav 右侧，作为性能展示） */
+    fpsAcc += dt; fpsN++;
+    if(fpsAcc > 500){
+      var fps = Math.round(1000/(fpsAcc/fpsN));
+      var el = document.getElementById('nav-rt');
+      if(el && curView==='game') el.textContent = fps+' FPS';
+      fpsAcc=0; fpsN=0;
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+/* =======================================================================
+   视图 02 · 抢红包仿群聊游戏（9 个群并发 + 3 种模式）
+   ======================================================================= */
+
+var GROUPS = [
+  { id:'fam',  name:'相亲相爱一家人',   icon:'🏮', min:1500, max:12000, cmin:5,  cmax:8,  members:14, algo:'double', interval:[6,13], speed:.7,
+    personality:'长辈出手，抢到就是赚到', lines:['天气转凉了，多穿点衣服','晚饭都吃了吗','早点睡，别老熬夜玩手机','给你寄了箱苹果记得收','周末回家吃饭吗','转发：这几种食物千万别混着吃'],
+    bless:['祝全家身体健康','平平安安就是福','一点心意，别嫌少','新年顺顺利利'] },
+  { id:'work', name:'星辰科技 · 全员群', icon:'🏢', min:8000, max:50000, cmin:10, cmax:20, members:38, algo:'double', interval:[9,17], speed:1.15,
+    personality:'老板发大包，手慢一秒就没了', lines:['周五前把周报交一下','这个需求排到下个迭代','会议室 3 有人在用吗','收到请回复','线上问题已修复','辛苦大家了'],
+    bless:['项目顺利上线','季度奖金提前发','感谢各位伙伴','辛苦了，喝杯奶茶'] },
+  { id:'fish', name:'产品部摸鱼小分队', icon:'🐟', min:500, max:3000, cmin:4, cmax:6, members:9, algo:'pure', interval:[4,9], speed:1.5,
+    personality:'额度最小，抢得最凶', lines:['中午吃啥','楼下新开了一家咖啡','我摸会儿鱼先','需求又改了？','几点能下班','帮我砍一刀'],
+    bless:['摸鱼基金','奶茶基金','小小心意','今天不加班'] },
+  { id:'cls',  name:'三年二班 · 老同学', icon:'🎓', min:2000, max:8000, cmin:6, cmax:9, members:22, algo:'double', interval:[8,15], speed:1.0,
+    personality:'抢完必晒金额，抢少了被笑一年', lines:['还记得班主任是谁吗','下个月聚会来不来','谁有当年的合照','当年抄我作业的现在都胖了','我们班有多少人结婚了','晒一下你抢了多少'],
+    bless:['致我们逝去的青春','老同学情谊常在','毕业十年快乐'] },
+  { id:'dorm', name:'四号楼 502',      icon:'🛏', min:500, max:6000, cmin:3, cmax:4, members:5, algo:'pure', interval:[3,7], speed:1.7,
+    personality:'人最少，红包最密，骂得最狠', lines:['谁又用完我的洗衣液','垃圾谁来倒','空调开 26 度行不行','晚上一起点外卖','别睡了起床','又忘带钥匙了吧你'],
+    bless:['宿舍建设基金','室友补贴','消消气专用'] },
+  { id:'ball', name:'周五羽毛球局',     icon:'🏸', min:1000, max:5000, cmin:5, cmax:8, members:16, algo:'double', interval:[7,13], speed:1.1,
+    personality:'红包约等于场地费众筹', lines:['周五还订 7 点吗','我这周请假一次','谁带球啊','上次那个反杀太帅了','AA 一下场地费','双打还是单打'],
+    bless:['场地费众筹','赢了请喝水','运动快乐'] },
+  { id:'home', name:'阳光花园业主群',   icon:'🌇', min:300, max:2000, cmin:8, cmax:12, members:44, algo:'jitter', interval:[14,26], speed:.55,
+    personality:'红包极少，抢到靠缘分', lines:['3 号楼电梯又坏了','物业费什么时候交','地下车库 B2 有位吗','快递柜满了','楼上能不能别装修了','停水通知看了吗'],
+    bless:['物业便民小红包','邻里同乐','感谢配合'] },
+  { id:'cous', name:'表兄弟姐妹',       icon:'🧨', min:1000, max:6000, cmin:4, cmax:6, members:11, algo:'tail', interval:[5,11], speed:1.35,
+    personality:'谁先发谁吃亏，全靠互相拱', lines:['你怎么还不结婚','对象找着没','表哥发财了啊','先来一个红包暖暖场','过年聚不聚','你这工作稳定吗'],
+    bless:['谁先抢谁请客','接力开始','图个吉利'] },
+  { id:'ex',   name:'前司摸鱼联盟',     icon:'☕', min:2000, max:10000, cmin:6, cmax:10, members:19, algo:'double', interval:[8,16], speed:1.0,
+    personality:'离职了还在发红包', lines:['新公司还加班吗','你们那边年终奖几个月','内推要不要','老领导还在吗','出来聚一顿','想你们的下午茶'],
+    bless:['散买卖不散交情','前程似锦','江湖再见'] }
+];
+
+var EXTRA_LINES = ['在吗','+1','哈哈哈','确实','我先冲了','手慢了一步','这波血亏','谢谢老板','运气爆棚','抢到了抢到了','你们也太快了吧','我刚看到'];
+
+var Game = {
+  mode:'timed', running:false, timeLeft:60, tickId:null, relayRound:0,
+  balanceC:0, gotCount:0, kingCount:0, dead:false,
+  groups:{}, activeConv:null, relayPk:null
+};
+
+function rndRange(a,b){ return a + Math.random()*(b-a); }
+function pickOne(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+var ME = {nick:'我', avatar:'🙂', me:true, balance:0, kingCount:0, dead:false};
+function initGroups(){
+  GROUPS.forEach(function(gi){
+    var members = [];
+    var shuffled = NICKS.slice().sort(function(){ return Math.random()-0.5; });
+    for(var i=0;i<Math.min(9,gi.members-1);i++) members.push({nick:shuffled[i%shuffled.length], avatar:pickOne(['🐼','🐧','🦊','🐱','🐶','🐰','🐻','🐨','🦁','🐷','🐮','🐯']), me:false, balance:0, kingCount:0});
+    members.push(ME);
+    Game.groups[gi.id] = {
+      cfg:gi, members:members, msgs:[], packets:[], unread:0, lastActive:Date.now(),
+      nextPacketAt: Date.now() + rndRange(gi.interval[0], gi.interval[1])*1000*0.4,
+      nextMsgAt: Date.now() + rndRange(1.2, 4)*1000,
+      balance: 0, kingCount: 0, dead:false
+    };
+  });
+}
+
+function myMember(){ return ME; }
+
+function fmtClock(d){
+  var h=d.getHours(), m=d.getMinutes();
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+function tickClock(){
+  var el = $('#clock'); if(!el) return;
+  el.textContent = fmtClock(new Date());
+}
+
+/* ---------- 消息与红包 ---------- */
+function pushMsg(gid, obj){
+  var g = Game.groups[gid];
+  g.msgs.push(obj);
+  if(g.msgs.length > 60) g.msgs.splice(0, g.msgs.length-60);
+  g.lastActive = Date.now();
+  if(Game.activeConv !== gid && obj.kind!=='read') g.unread++;
+  renderList();
+  if(Game.activeConv === gid) renderChat(gid, true);
+}
+
+function makePacket(gid, amountCents, count, senderIdx, bless){
+  var g = Game.groups[gid];
+  var rnd = Math.random;
+  var amt = Core.allocate(g.cfg.algo, amountCents, count, rnd);
+  if(!amt) return null;
+  var pk = {
+    id:'pk'+(++makePacket._n), gid:gid, total:amountCents, count:count,
+    amounts:amt, claimed:new Array(count).fill(null), taken:0,
+    sender: g.members[senderIdx==null?Math.floor(Math.random()*(g.members.length-1)):senderIdx],
+    bless: bless || pickOne(g.cfg.bless),
+    createdAt: Date.now(), ttl: Game.mode==='timed'?15000:26000, expired:false, mine:false
+  };
+  /* 预先让部分群员抢走（模拟"你不看的时候它们也在动"） */
+  var pre = Math.floor(Math.random()*Math.max(1,Math.round(count*0.35)));
+  for(var i=0;i<pre;i++){
+    var who = g.members[Math.floor(Math.random()*(g.members.length-1))];
+    if(who.me) continue;
+    claimSlot(pk, who);
+  }
+  g.packets.push(pk);
+  if(g.packets.length>6) g.packets.shift();
+  pushMsg(gid, {kind:'packet', pk:pk, t:Date.now()});
+  return pk;
+}
+makePacket._n = 0;
+
+function claimSlot(pk, who){
+  if(pk.taken >= pk.count) return null;
+  var v = pk.amounts[pk.taken];
+  pk.claimed[pk.taken] = { nick:who.nick, avatar:who.avatar, me:!!who.me, cent:v, at:Date.now() };
+  pk.taken++;
+  if(who.me){
+    Game.balanceC += v; Game.gotCount++;
+    if(isMobile()) navigator.vibrate && navigator.vibrate(12);
+  }
+  who.balance = (who.balance||0) + v;
+  return v;
+}
+
+function bestSlot(pk){
+  var bi=-1, bv=-1;
+  for(var i=0;i<pk.taken;i++){ if(pk.claimed[i].cent>bv){ bv=pk.claimed[i].cent; bi=i; } }
+  return bi<0?null:pk.claimed[bi];
+}
+
+/* ---------- 后台推进 ---------- */
+function step(){
+  if(!Game.running) return;
+  var now = Date.now();
+  GROUPS.forEach(function(cfg){
+    var g = Game.groups[cfg.id];
+    /* 超时过期 */
+    g.packets.forEach(function(pk){
+      if(!pk.expired && now - pk.createdAt > pk.ttl && pk.taken < pk.count){
+        pk.expired = true;
+        var els = document.querySelectorAll('.hbsheet[data-pk="'+pk.id+'"]');
+        for(var q=0;q<els.length;q++){ els[q].classList.add('expired');
+          var fs = els[q].querySelector('.foot span:first-child'); if(fs) fs.textContent = '红包已过期'; }
+      }
+    });
+    /* 聊天 */
+    if(now >= g.nextMsgAt){
+      g.nextMsgAt = now + rndRange(1.6, 6)/(cfg.speed*(Game.running?1.7:1))*1000;
+      var who = g.members[Math.floor(Math.random()*(g.members.length-1))];
+      var line = Math.random()<0.6 ? pickOne(cfg.lines) : pickOne(EXTRA_LINES);
+      pushMsg(cfg.id, {kind:'text', who:who, text:line, t:now});
+      /* 别人抢别人的红包 */
+      var open = g.packets.filter(function(p){ return !p.expired && p.taken<p.count; });
+      if(open.length && Math.random()<0.72/cfg.speed){
+        var pk = open[open.length-1];
+        var gotCent = pk.amounts[pk.taken-1];
+        claimSlot(pk, who);
+        logLine('<span>'+esc(cfg.name)+' · '+esc(who.nick)+' 抢到 <b>'+fmtY(gotCent)+'</b></span>');
+        refreshPacketFoot(pk);
+        renderList();
+      }
+    }
+    /* 发红包（限时模式下每群最多留 1 个待抢包，逼你在群之间跳） */
+    if(now >= g.nextPacketAt && !(Game.mode==='timed' && openCountFast(cfg.id) >= 1)){
+      var span = cfg.interval;
+      g.nextPacketAt = now + rndRange(span[0], span[1])/cfg.speed*1000 * (Game.mode==='timed'?0.6:1);
+      var cents = Math.round(rndRange(cfg.min, cfg.max)/100)*100;
+      var cnt = Math.round(rndRange(cfg.cmin, cfg.cmax));
+      if(cents < cnt) cents = cnt;
+      var senderIdx = Math.floor(Math.random()*(g.members.length-1));
+      var pk = makePacket(cfg.id, cents, cnt, senderIdx);
+      if(pk){
+        logLine('<span class="warn">'+esc(cfg.name)+'：</span>'+esc(pk.sender.nick)+' 发了个红包 <b>'+fmtY(cents)+'</b> / '+cnt+' 份');
+        if(Game.mode==='relay'){
+          var mm = g.members[senderIdx];
+          mm.balance = (mm.balance||0) - cents;
+        }
+      }
+    }
+  });
+
+  if(Game.mode==='timed'){
+    Game.timeLeft -= 0.2;
+    if(Game.timeLeft <= 0){ endTimed(); return; }
+  }else if(Game.mode==='relay'){
+    checkRelay();
+  }
+  updateHud();
+  renderList();
+  if(Game.activeConv) renderChat(Game.activeConv, false);
+}
+
+/* ---------- 三种模式 ---------- */
+function startGame(mode){
+  stopTick();
+  resetGame(false);
+  Game.mode = mode; Game.running = true; Game.dead=false;
+  $$('#modebar .mb').forEach(function(b){ b.classList.toggle('on', b.dataset.m===mode); });
+  logLine('<span class="ok">▶ 开始「'+({timed:'限时 60 秒',relay:'手气王接力',free:'自由模式'})[mode]+'」</span>');
+  if(mode==='timed'){
+    Game.timeLeft = 60;
+    /* 密集撒包 */
+    GROUPS.forEach(function(cfg,i){ Game.groups[cfg.id].nextPacketAt = Date.now()+rndRange(300, 2600); });
+    toast('红包散落在九个群里，盯着列表上亮起的标记来回跳群');
+  }else if(mode==='relay'){
+    Game.relayRound = 1;
+    var seedG = Game.groups['cous'];
+    GROUPS.forEach(function(cfg){
+      Game.groups[cfg.id].members.forEach(function(m){
+        if(!m.me) m.balance = Math.round(rndRange(cfg.min*1.2, cfg.max*1.6));
+      });
+    });
+    var cents = 8800, cnt = 6;
+    var pk = makePacket('cous', cents, cnt, Math.floor(Math.random()*(seedG.members.length-1)), '接力开始，谁最多谁接着发');
+    if(pk){ pk.relay = true; Game.relayPk = pk; }
+    ME.balance = 0; Game.balanceC = 0;
+    logLine('<span class="warn">💡 提示：你余额为 ¥0.00 —— 一旦当上手气王就立刻出局。</span>');
+    logLine('<span class="warn">👑 第 1 轮开始：</span>手气最佳者必须发下一个 ¥88.00 / 6 份');
+    switchView('game');
+    openConv('cous');
+  }else{
+    GROUPS.forEach(function(cfg){ Game.groups[cfg.id].nextPacketAt = Date.now()+rndRange(500, 4000); });
+    toast('自由模式：九个群随便逛，纯粹看热闹');
+  }
+  Game.tickId = setInterval(step, 200);
+  updateHud(); renderList(); renderRank();
+  switchView('game');
+  document.body.classList.toggle('gamefull', isMobile());
+}
+function stopTick(){ if(Game.tickId){ clearInterval(Game.tickId); Game.tickId=null; } }
+
+function endTimed(){
+  stopTick(); Game.running=false;
+  var rank = rankList();
+  var myRank = rank.findIndex(function(r){ return r.me; })+1;
+  logLine('<span class="ok">⏱ 时间到！</span>你抢到 <b>'+Game.gotCount+'</b> 份，共 <b>'+fmtY(Game.balanceC)+'</b>，排名第 <b>'+myRank+'/'+rank.length+'</b>');
+  $('#hb-round-txt').textContent = '已结束 · 第 '+myRank+' 名';
+  $('#hb-time').classList.add('danger');
+  burstConfetti(fmtY(Game.balanceC), '限时 60 秒结束 · 抢到 '+Game.gotCount+' 份');
+  toast('本局结束：¥'+(Game.balanceC/100).toFixed(2)+'，排名 '+myRank+'/'+rank.length);
+}
+
+function checkRelay(){
+  /* 找到当前轮未抢完的接力包；抢完即结算 */
+  var pk = Game.relayPk;
+  if(!pk) return;
+  if(pk.taken >= pk.count || pk.expired){
+    var best = bestSlot(pk);
+    if(!best){ nextRelay(pk); return; }
+    logLine('<span class="warn">👑 第 '+Game.relayRound+' 轮手气王：'+esc(best.nick)+'（'+fmtY(best.cent)+'）</span>');
+    var owner = findMemberByNick(best.nick);
+    owner.kingCount = (owner.kingCount||0)+1;
+    if(best.me){ Game.kingCount++; }
+    /* 手气王必须发下一个 */
+    var need = pk.total;
+    if((owner.balance||0) < need){
+      owner.dead = true;
+      logLine('<span class="warn">💀 '+esc(best.nick)+' 余额不足 ¥'+(need/100).toFixed(2)+'，出局。</span>');
+      if(best.me){ Game.dead=true; stopTick(); Game.running=false;
+        $('#hb-round-txt').textContent='出局 · 余额不足';
+        toast('你出局了：赢反而是风险');
+      }
+      setTimeout(function(){ nextRelay(pk); }, 1200);
+    }else{
+      owner.balance -= need;
+      setTimeout(function(){
+        var gid = pk.gid;
+        var senderIdx = Game.groups[gid].members.indexOf(owner);
+        var npk = makePacket(gid, need, pk.count, senderIdx<0?null:senderIdx, '接力继续 · 由上轮手气王发出');
+        if(npk){ npk.relay = true; Game.relayPk = npk; Game.relayRound++;
+          logLine('<span class="ok">'+esc(owner.nick)+' 发出第 '+Game.relayRound+' 轮红包</span>');
+        }
+      }, 1400);
+    }
+    pk.settled = true;
+  }
+}
+function nextRelay(pk){
+  var gid = pk ? pk.gid : 'cous';
+  var g = Game.groups[gid];
+  var alive = g.members.filter(function(m){ return !m.dead; });
+  var sender = alive[Math.floor(Math.random()*alive.length)];
+  Game.relayRound++;
+  var npk = makePacket(gid, pk?pk.total:8800, pk?pk.count:6, g.members.indexOf(sender), '无人接盘，随机选一人发起');
+  if(npk){ npk.relay = true; Game.relayPk = npk; }
+}
+function findMemberByNick(nick){
+  for(var i=0;i<GROUPS.length;i++){
+    var ms = Game.groups[GROUPS[i].id].members;
+    for(var j=0;j<ms.length;j++) if(ms[j].nick===nick) return ms[j];
+  }
+  return myMember();
+}
+
+/* ---------- HUD ---------- */
+function updateHud(){
+  var t = $('#hb-time');
+  if(Game.mode==='timed'){
+    t.querySelector('b').textContent = Math.max(0,Game.timeLeft).toFixed(1)+'s';
+    t.classList.toggle('danger', Game.timeLeft<10);
+  }else{
+    t.querySelector('b').textContent = Game.mode==='relay' ? ('第 '+Game.relayRound+' 轮') : '∞';
+    t.classList.remove('danger');
+  }
+  $('#hb-balance').querySelector('b').textContent = fmtY(Game.balanceC);
+  $('#hb-got').querySelector('b').textContent = Game.gotCount;
+  $('#hb-rate').querySelector('b').textContent = Game.kingCount;
+  if(Game.mode==='relay'){
+    $('#hb-round-txt').textContent = '第 '+Game.relayRound+' 轮 · '+(Game.dead?'你已出局':'手气最佳者需发下一个');
+  }
+  renderRank();
+}
+
+function rankList(){
+  var map = {};
+  GROUPS.forEach(function(cfg){
+    Game.groups[cfg.id].members.forEach(function(m){
+      if(!map[m.nick]) map[m.nick] = {nick:m.nick, avatar:m.avatar, me:m.me, bal:0, kings:0, dead:m.dead};
+      map[m.nick].bal += (m.balance||0);
+      map[m.nick].kings += (m.kingCount||0);
+      map[m.nick].dead = map[m.nick].dead || m.dead;
+    });
+  });
+  map['我'].bal = Game.balanceC;
+  map['我'].kings = Game.kingCount;
+  map['我'].dead = Game.dead;
+  return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b){ return b.bal-a.bal; });
+}
+function renderRank(){
+  var host = $('#grank'); if(!host) return;
+  var list = rankList().slice(0,10);
+  host.innerHTML = list.map(function(r,i){
+    return '<div class="rk'+(r.me?' me':'')+(r.dead?' dead':'')+'"><span class="no">'+(i+1)+'</span>'+
+      '<span style="font-size:16px">'+r.avatar+'</span><span class="nm">'+esc(r.nick)+(r.kings?' 👑×'+r.kings:'')+'</span>'+
+      '<span class="vv">'+fmtY(r.bal)+'</span></div>';
+  }).join('');
+}
+
+/* ---------- 渲染手机界面 ---------- */
+var packetOpenCount = {};
+function packetCountOpen(gid){
+  var g = Game.groups[gid];
+  var n = 0;
+  g.packets.forEach(function(p){ if(!p.expired && p.taken<p.count){
+    var already = p.claimed.some(function(c){ return c && c.me; });
+    if(!already) n++;
+  }});
+  return n;
+}
+/* O(1) 版本：由 renderList 维护缓存，供 step() 内高频调用 */
+function openCountFast(gid){ return packetOpenCount[gid] || 0; }
+function renderList(){
+  var host = $('#plist'); if(!host) return;
+  var order = GROUPS.map(function(cfg){
+    var g = Game.groups[cfg.id];
+    var last = g.msgs[g.msgs.length-1];
+    var n = packetCountOpen(cfg.id);
+    packetOpenCount[cfg.id] = n;
+    return {cfg:cfg,g:g,last:last,n:n};
+  }).sort(function(a,b){ return (b.g.lastActive||0)-(a.g.lastActive||0); });
+
+  host.innerHTML = order.map(function(o){
+    var g = o.g, cfg = o.cfg, n = o.n;
+    var preview = '暂无新消息';
+    var red = false;
+    if(o.last){
+      if(o.last.kind==='packet'){ preview = '[红包] '+o.last.pk.bless; red = true; }
+      else if(o.last.kind==='read'){ preview = o.last.text; }
+      else { preview = o.last.who.nick+'：'+o.last.text; }
+    }
+    var ts = o.g.lastActive ? fmtClock(new Date(o.g.lastActive)) : '';
+    return '<div class="conv'+(Game.activeConv===cfg.id?' on':'')+'" data-id="'+cfg.id+'">'+
+      '<div class="cav">'+cfg.icon+(n?'<span class="n">'+n+'</span>':'')+'</div>'+
+      '<div class="cmid"><div class="ctop"><span class="cname">'+esc(cfg.name)+'</span><span class="ctime">'+ts+'</span></div>'+
+      '<div class="cmsg'+(red?' red':'')+'">'+esc(preview)+'</div></div></div>';
+  }).join('');
+}
+
+function renderChat(gid, scrollDown){
+  if(Game.activeConv !== gid) return;              /* 非当前会话不重绘 */
+  if($('#pmask').classList.contains('on')) return; /* 拆包面板打开期间冻结消息流，避免节点抖动 */
+  if($('#pmask').classList.contains('on')) return; /* 拆包面板打开期间冻结消息流，避免节点抖动 */
+  var host = $('#pchats');
+  var box = host.querySelector('[data-c="'+gid+'"]');
+  var incremental = !!(box && box.dataset.n != null && Game.groups[gid].msgs.length > +box.dataset.n);
+  if(!box){
+    box = document.createElement('div');
+    box.className = 'pchat'; box.dataset.c = gid;
+    box.innerHTML = '<div class="chatbody"></div><div class="pchatbar"><div class="fakein">轻触输入…（本演示不发送消息）</div><div class="plus">＋</div></div>';
+    host.appendChild(box);
+  }
+  var body = box.querySelector('.chatbody');
+  var g = Game.groups[gid];
+  var nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 150;
+
+  if(incremental){
+    var from = +box.dataset.n;
+    var frag = '';
+    for(var i=from;i<g.msgs.length;i++) frag += msgHtml(g.msgs[i]);
+    box.dataset.n = g.msgs.length;
+    body.insertAdjacentHTML('beforeend', frag);
+    while(body.children.length > 90) body.removeChild(body.firstChild);
+    if(scrollDown!==false || nearBottom) body.scrollTop = body.scrollHeight;
+    return;
+  }
+
+  var html = '<div class="sysmsg"><span>以下是群「'+esc(g.cfg.name)+'」的历史消息</span></div>';
+  g.msgs.forEach(function(m){ html += msgHtml(m); });
+  body.innerHTML = html;
+  box.dataset.n = g.msgs.length;
+  if(scrollDown!==false && nearBottom) body.scrollTop = body.scrollHeight;
+}
+function g_msgcount(gid){ return Game.groups[gid].msgs.length; }
+function msgHtml(m){
+  if(m.kind==='text') return rowText(m.who, m.text, m.who.me);
+  if(m.kind==='packet') return rowPacket(m.pk);
+  return '<div class="sysmsg"><span>'+esc(m.text)+'</span></div>';
+}
+function rowText(who, text, me){
+  return '<div class="msgrow'+(me?' me':'')+'"><div class="mav">'+who.avatar+'</div>'+
+    '<div class="mmain"><div class="mname">'+esc(me?'我':who.nick)+'</div><div class="bubble">'+esc(text)+'</div></div></div>';
+}
+function rowPacket(pk){
+  var left = pk.count - pk.taken;
+  var mine = pk.claimed.some(function(c){ return c && c.me; });
+  var cls = pk.expired && left>0 ? 'expired' : (mine ? 'got' : '');
+  var foot = pk.expired && left>0 ? '红包已过期' : ('剩 '+left+'/'+pk.count+' · 点击查看');
+  return '<div class="msgrow"><div class="mav">'+pk.sender.avatar+'</div><div class="mmain">'+
+    '<div class="mname">'+esc(pk.sender.nick)+'</div>'+
+    '<button class="hbsheet '+cls+'" data-pk="'+pk.id+'">'+
+      '<div class="hs1"><div class="ic">🧧</div><div><div class="t1">'+esc(pk.bless)+'</div>'+
+      '<div class="t2">'+(pk.sender.me?'我发出的':'来自 '+esc(pk.sender.nick))+'</div>'+
+      (pk.relay?'<span class="tag">👑 手气王接力</span>':'')+'</div></div>'+
+      '<div class="foot"><span>'+foot+'</span><span>'+(mine?'已领':'拼手气')+'</span></div>'+
+    '</button></div></div>';
+}
+
+/* 只更新红包卡片底部的「剩 x/n」，不重建 DOM —— 保证实时递减且不抖动 */
+function refreshPacketFoot(pk){
+  var left = pk.count - pk.taken;
+  var nodes = document.querySelectorAll('.hbsheet[data-pk="'+pk.id+'"]');
+  for(var i=0;i<nodes.length;i++){
+    var el = nodes[i];
+    var f = el.querySelector('.foot span:first-child');
+    if(f) f.textContent = '剩 ' + left + '/' + pk.count + ' · 点击查看';
+    if(left <= 0 && !el.classList.contains('got')){
+      var r = el.querySelector('.foot span:last-child');
+      if(r) r.textContent = '已抢完';
+    }
+  }
+}
+
+/* 只更新红包卡片底部的「剩 x/n」，不重建 DOM —— 实时递减且不抖动 */
+function refreshPacketFoot(pk){
+  var left = pk.count - pk.taken;
+  var nodes = document.querySelectorAll('.hbsheet[data-pk="'+pk.id+'"]');
+  for(var i=0;i<nodes.length;i++){
+    var el = nodes[i];
+    var f = el.querySelector('.foot span:first-child');
+    if(f) f.textContent = '剩 ' + left + '/' + pk.count + ' · 点击查看';
+    if(left <= 0){
+      var r = el.querySelector('.foot span:last-child');
+      if(r) r.textContent = '已抢完';
+    }
+  }
+}
+
+function findPk(id){
+  for(var i=0;i<GROUPS.length;i++){
+    var ps = Game.groups[GROUPS[i].id].packets;
+    for(var j=0;j<ps.length;j++) if(ps[j].id===id) return ps[j];
+  }
+  return null;
+}
+
+/* ---------- 打开会话 / 拆红包 ---------- */
+function openConv(gid){
+  Game.activeConv = gid;
+  var cfg = GROUPS.filter(function(c){return c.id===gid;})[0];
+  $('#plist').classList.remove('on');
+  $$('.pchat').forEach(function(p){ p.classList.toggle('on', p.dataset.c===gid); });
+  $('#btn-back').classList.remove('hidden');
+  $('#nav-title').textContent = cfg.name;
+  $('#nav-sub').textContent = cfg.members+' 人群 · '+cfg.personality;
+  Game.groups[gid].unread = 0;
+  renderList(); renderChat(gid, true);
+}
+function backToList(){
+  Game.activeConv = null;
+  $$('.pchat').forEach(function(p){ p.classList.remove('on'); });
+  $('#plist').classList.add('on');
+  $('#btn-back').classList.add('hidden');
+  $('#nav-title').textContent = '微信';
+  $('#nav-sub').textContent = '9 个群 · 全部活跃';
+  renderList();
+}
+
+function openPacketSheet(pk){
+  var mask = $('#pmask');
+  var mine = pk.claimed.some(function(c){ return c && c.me; });
+  var canClaim = !pk.expired && pk.taken < pk.count && !mine;
+  var rows = '';
+  for(var i=0;i<pk.count;i++){
+    var c = pk.claimed[i];
+    if(c){
+      var isBest = false;
+      rows += '<div class="lrow" data-i="'+i+'"><span class="lav">'+c.avatar+'</span><span>'+esc(c.nick)+(c.me?'（我）':'')+'</span><span class="lamt">--</span></div>';
+    }else{
+      rows += '<div class="lrow empty">手慢了，没抢到这一份</div>';
+      break;
+    }
+  }
+  var best = bestSlot(pk);
+  mask.innerHTML = '<div class="sheet">'+
+    '<div class="sh"><div class="who">'+esc(pk.sender.nick)+' 的红包</div><div class="bless">'+esc(pk.bless)+'</div></div>'+
+    '<div class="body">'+
+      (canClaim ? '<button class="openbtn" id="opendo">开</button>' :
+        '<div class="total"><b id="sheet-total">¥0.00</b><i>'+(mine?'已在「'+esc(GROUPS.filter(function(g){return g.id===pk.gid;})[0].name)+'」抢到':'红包已被抢完或已过期')+'</i></div>')+
+      '<div class="list" id="sheet-list">'+rows+'</div>'+
+      '<button class="close" id="sheet-close">返回群聊</button>'+
+    '</div></div>';
+  mask.classList.add('on');
+
+  var od = mask.querySelector('#opendo');
+  if(od) od.onclick = function(){ doClaim(pk); };
+  mask.querySelector('#sheet-close').onclick = closeSheet;
+
+  /* 已领取的金额逐条滚出 */
+  var cells = mask.querySelectorAll('.lrow:not(.empty)');
+  cells.forEach(function(el,i){
+    var idx = +el.dataset.i;
+    var cent = pk.claimed[idx] ? pk.claimed[idx].cent : 0;
+    setTimeout(function(){
+      el.querySelector('.lamt').textContent = fmtY(cent);
+      if(best && pk.claimed[idx]===best){
+        el.classList.add('best');
+        el.querySelector('.lamt').insertAdjacentHTML('afterend','<span class="lb">手气最佳</span>');
+      }
+    }, 90*i);
+  });
+  var st = mask.querySelector('#sheet-total');
+  if(st){
+    var myc = pk.claimed.filter(function(c){return c&&c.me;}).reduce(function(s,c){return s+c.cent;},0);
+    var t0=performance.now();
+    (function f(now){
+      var e=easeOut(clamp((now-t0)/700,0,1));
+      st.textContent=fmtY(myc*e);
+      if(e<1) requestAnimationFrame(f);
+    })(performance.now());
+  }
+}
+function closeSheet(){ $('#pmask').classList.remove('on'); $('#pmask').innerHTML=''; }
+
+function doClaim(pk){
+  if(pk.expired || pk.taken>=pk.count) return;
+  var me = myMember();
+  var cent = claimSlot(pk, me);
+  if(cent==null) return;
+  logLine('<span class="ok">你抢到 '+fmtY(cent)+'</span> · '+esc(GROUPS.filter(function(g){return g.id===pk.gid;})[0].name)+
+    (pk.relay?' <span class="warn">(接力中)</span>':''));
+  closeSheet();
+  refreshPacketFoot(pk);
+  renderChat(pk.gid, true); renderList(); updateHud();
+  burstCoins(cent);
+  /* 检查是否成为本轮手气王 */
+  setTimeout(function(){
+    var b = bestSlot(pk);
+    if(b && b.me && pk.taken>=pk.count){
+      Game.kingCount++;
+      toast('👑 你是本轮手气最佳 —— 按规矩要掏钱发下一个');
+    }
+    if(Game.mode==='relay') checkRelay();
+    updateHud();
+  }, 120);
+}
+
+function burstCoins(cent){
+  var host = $('#confetti');
+  var icons = ['🪙','💰','🧧','✨'];
+  for(var i=0;i<16;i++){
+    var s = document.createElement('span');
+    s.className='coinf';
+    s.textContent = pickOne(icons);
+    s.style.left = (18+Math.random()*64)+'%';
+    s.style.top = (26+Math.random()*20)+'%';
+    s.style.animationDuration = (0.7+Math.random()*0.9)+'s';
+    s.style.fontSize = (13+Math.random()*13)+'px';
+    host.appendChild(s);
+    (function(el){ setTimeout(function(){ el.remove(); }, 1800); })(s);
+  }
+}
+function burstConfetti(bigText, sub){
+  var mask = $('#pmask');
+  mask.innerHTML = '<div class="sheet"><div class="sh"><div class="who">'+esc(sub)+'</div>'+
+    '<div class="bless" style="font-size:22px">'+esc(bigText)+'</div></div>'+
+    '<div class="body"><div class="total"><b>'+Game.gotCount+'</b><i>抢到份数 · 排名见右侧</i></div>'+
+    '<button class="close" id="sheet-close">关闭</button></div></div>';
+  mask.classList.add('on');
+  mask.querySelector('#sheet-close').onclick = closeSheet;
+  burstCoins(1);
+}
+
+/* ---------- 战况播报 & 群设定表 ---------- */
+function logLine(html){
+  var host = $('#glog'); if(!host) return;
+  var d = document.createElement('div');
+  var t = fmtClock(new Date());
+  d.innerHTML = '<span style="color:var(--dim);font-family:var(--mono);font-size:11px">'+t+'</span> '+html;
+  host.insertBefore(d, host.firstChild);
+  while(host.children.length>60) host.removeChild(host.lastChild);
+}
+function renderGroupTable(){
+  var host = $('#gtbl'); if(!host) return;
+  host.innerHTML = '<thead><tr><th>群</th><th>金额区间</th><th>份数</th><th>算法</th><th>性格</th></tr></thead><tbody>'+
+    GROUPS.map(function(g){
+      return '<tr><td class="n">'+g.icon+' '+esc(g.name)+'</td>'+
+        '<td class="n">¥'+(g.min/100).toFixed(0)+'–'+(g.max/100).toFixed(0)+'</td>'+
+        '<td class="n">'+g.cmin+'–'+g.cmax+'</td>'+
+        '<td class="n" style="color:'+Core.ALGOS[g.algo].color+'">'+Core.ALGOS[g.algo].short+'</td>'+
+        '<td>'+esc(g.personality)+'</td></tr>';
+    }).join('')+'</tbody>';
+}
+
+function resetGame(keepMode){
+  stopTick();
+  Game.running=false; Game.timeLeft=60; Game.balanceC=0; Game.gotCount=0;
+  Game.kingCount=0; Game.relayRound=0; Game.dead=false; Game.relayPk=null;
+  Game.activeConv=null;
+  ME.balance=0; ME.kingCount=0; ME.dead=false;
+  initGroups();
+  closeSheet();
+  $('#pchats').innerHTML='';
+  $('#glog').innerHTML='';
+  $('#hb-time').classList.remove('danger');
+  backToListSilent();
+  updateHud(); renderList(); renderRank();
+  $('#hb-round-txt').textContent = keepMode ? '已重置 · 点「开始」重开一局' : '未开始 · 选择模式后点「开始」';
+  logLine('<span>系统：九个群已就绪。每个群有自己的金额区间、份数和分配算法。</span>');
+}
+function backToListSilent(){
+  Game.activeConv=null;
+  $$('.pchat').forEach(function(p){ p.classList.remove('on'); });
+  $('#plist').classList.add('on');
+  $('#btn-back').classList.add('hidden');
+  $('#nav-title').textContent='微信';
+  $('#nav-sub').textContent='9 个群 · 全部活跃';
+}
+
+function bindGame(){
+  $('#modebar').addEventListener('click', function(e){
+    var mb = e.target.closest('.mb');
+    if(mb){
+      Game.mode = mb.dataset.m;
+      $$('#modebar .mb').forEach(function(b){ b.classList.toggle('on', b===mb); });
+      toast('已选择「'+mb.textContent.trim()+'」，点「开始」进入');
+      return;
+    }
+  });
+  $('#g-start').addEventListener('click', function(){ startGame(Game.mode); });
+  $('#g-reset').addEventListener('click', function(){ resetGame(true); toast('已重置'); });
+  $('#btn-back').addEventListener('click', backToList);
+  $('#plist').addEventListener('click', function(e){
+    var c = e.target.closest('.conv'); if(!c) return;
+    openConv(c.dataset.id);
+    if(isMobile()){
+      var n = packetCountOpen(c.dataset.id);
+      if(n) toast('该群有 '+n+' 个待抢红包');
+    }
+  });
+  $('#pchats').addEventListener('click', function(e){
+    var b = e.target.closest('.hbsheet'); if(!b) return;
+    var pk = findPk(b.dataset.pk); if(!pk) return;
+    openPacketSheet(pk);
+  });
+  renderGroupTable();
+}
+
+/* =======================================================================
+   自适应重绘
+   ======================================================================= */
+var rzTid=null;
+function layoutAll(){
+  clearTimeout(rzTid);
+  rzTid = setTimeout(function(){
+    if(curView==='single'){ drawMiniDist(lastResult?Math.max.apply(null,lastResult):null); }
+    if(curView==='sim') redrawSim();
+    if(curView==='duel') redrawDuel();
+  }, 220);
+}
+
+/* =======================================================================
+   启动
+   ======================================================================= */
+function boot(){
+  readHash();
+  applyParamsToUI();
+  bindControls();
+  bindGame();
+  resetGame(false);
+  tickClock(); setInterval(tickClock, 10000);
+  switchView(wantView || 'single');
+  runSingle();
+  /* 首次自动跑一次 1 万次，让视图 03 一开始就有图 */
+  setTimeout(function(){
+    if(!lastSim){
+      var dst = Core.makeAgg(P.total, P.count, 48);
+      var rnd = makeRnd();
+      for(var i=0;i<10000;i++){ var a=Core.allocate(P.algo,P.total,P.count,rnd); if(a) Core.aggFeed(dst,a); }
+      var st = Core.aggFinish(dst); st.cost = 0;
+      renderSim(st);
+      $('#sim-stat').textContent = '预热完成 · 10,000 次（可调大次数重跑）';
+    }
+  }, 400);
+  /* 默认往游戏群里灌一些历史消息，避免空屏 */
+  setTimeout(function(){
+    GROUPS.forEach(function(cfg){
+      var g = Game.groups[cfg.id];
+      for(var i=0;i<3;i++){
+        var who = g.members[Math.floor(Math.random()*(g.members.length-1))];
+        g.msgs.push({kind:'text', who:who, text:pickOne(cfg.lines), t:Date.now()-i*60000});
+      }
+      g.lastActive = Date.now() - Math.random()*600000;
+    });
+    renderList();
+  }, 100);
+  window.addEventListener('hashchange', function(){ location.reload(); });
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', boot);
+else boot();
+
+})();
+</script>
+</body>
 </html>
